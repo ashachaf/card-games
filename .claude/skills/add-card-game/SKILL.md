@@ -24,7 +24,7 @@ Start from an existing file such as `games/he/yaniv.json`, and fill every field:
 
 - `id`: the English name, lowercase with dashes. `aliases`: the English name first, then other names people search for.
 - `hook`: one or two sentences. `goal`: what wins or loses, in one or two sentences.
-- `deck` in words, `deckType` (`standard`, `jokers`, `stripped`) describing each deck, and `decks`: how many decks the base game needs (1, 2, 3…).
+- `deck` in words, `deckType` (`standard`, `jokers`, `stripped`) describing each deck, and `decks`: how many decks the game needs, as a number (`1`) or a range (`[1, 2]`, or `[1, null]` for any number of decks).
 - `values`: card ranks or points, as `[cards, meaning]` pairs, with `valuesNote` for trump or special cards.
 - `setup.steps` plus one `setup.visual` showing the deal. `turn`: one action per step, with a `visual` wherever cards make the rule clearer (allowed or not allowed, a combination, what beats what).
 - `scoring`: how a round ends and how the game ends.

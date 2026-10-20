@@ -36,7 +36,9 @@ function validate(g, file, tags) {
   ["name", "hook", "best", "age", "deck", "goal", "video"].forEach(str);
   need(Array.isArray(g.aliases), `"aliases" must be a list`);
   need(DECK_TYPES.includes(g.deckType), `"deckType" must be one of ${DECK_TYPES.join(", ")}: every game uses regular playing cards`);
-  need(Number.isInteger(g.decks) && g.decks >= 1 && g.decks <= 6, `"decks" must be a whole number from 1 to 6`);
+  const okDecks = Number.isInteger(g.decks) ? g.decks >= 1 && g.decks <= 6
+    : Array.isArray(g.decks) && g.decks.length === 2 && Number.isInteger(g.decks[0]) && g.decks[0] >= 1 && (g.decks[1] === null || (Number.isInteger(g.decks[1]) && g.decks[1] > g.decks[0]));
+  need(okDecks, `"decks" must be a whole number (1–6) or a range like [1, 2] or [1, null] for "or more"`);
   need(Array.isArray(g.players) && g.players.length === 2 && g.players.every(Number.isInteger) && g.players[0] >= 1 && g.players[0] <= g.players[1], `"players" must be [min, max]`);
   need(Array.isArray(g.minutes) && g.minutes.length === 2 && g.minutes.every(Number.isInteger) && g.minutes[0] <= g.minutes[1], `"minutes" must be [min, max]`);
   need([1, 2, 3].includes(g.difficulty), `"difficulty" must be 1, 2 or 3`);
@@ -96,6 +98,12 @@ const write = (rel, content) => { const p = path.join(DIST, rel); fs.mkdirSync(p
 fs.rmSync(DIST, { recursive: true, force: true });
 
 const SUITS = { S: "♠", H: "♥", D: "♦", C: "♣" };
+const deckCount = (g, ui) => {
+  const [a, b] = Array.isArray(g.decks) ? g.decks : [g.decks, g.decks], c = ui.deckCount, f = (t, v) => t.replace(/\{(\w+)\}/g, (_, k) => v[k]);
+  if (b === null) return a === 1 ? c["1plus"] : f(c.nplus, { n: a });
+  if (a === b) return a === 1 ? c["1"] : f(c.n, { n: a });
+  return f(c.range, { a, b });
+};
 const cardText = (spec, ui) => spec.trim().split(/\s+/).map(t => {
   t = t.replace(/\*$/, "");
   if (t === "|") return "·";
@@ -140,7 +148,7 @@ ${body}
     const players = g.players[0] === g.players[1] ? g.players[0] : `${g.players[0]}–${g.players[1]}`;
     outputs.push(write(`${prefix}text/${g.id}.html`, `${tHead(g.name)}<p><a href="./">${escHtml(ui.allGames)}</a></p>
 <h1>${escHtml(g.name)}</h1><p>${escHtml(g.hook)}</p>
-<p>${ui.players}: ${players} (${ui.best}: ${escHtml(g.best)}) · ${ui.time}: ${g.minutes[0]}–${g.minutes[1]} ${ui.minutesUnit} · ${ui.level}: ${ui.difficulty[g.difficulty]} · ${ui.age}: ${escHtml(g.age)}<br>${ui.need}: ${escHtml(g.deck)} (${g.decks === 1 ? ui.deckCount["1"] : ui.deckCount.n.replace("{n}", g.decks)})</p>
+<p>${ui.players}: ${players} (${ui.best}: ${escHtml(g.best)}) · ${ui.time}: ${g.minutes[0]}–${g.minutes[1]} ${ui.minutesUnit} · ${ui.level}: ${ui.difficulty[g.difficulty]} · ${ui.age}: ${escHtml(g.age)}<br>${ui.need}: ${escHtml(g.deck)} (${deckCount(g, ui)})</p>
 <h2>${ui.goal}</h2><p>${escHtml(g.goal)}</p>
 ${g.values ? `<h2>${ui.values}</h2><ul>${g.values.map(([c, v]) => `<li><bdi dir="ltr">${escHtml(cardText(c, ui))}</bdi>: ${escHtml(v)}</li>`).join("")}</ul>${g.valuesNote ? `<p>${escHtml(g.valuesNote)}</p>` : ""}` : ""}
 <h2>${ui.setup}</h2><ol>${g.setup.steps.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>${vis(g.setup.visual)}

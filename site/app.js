@@ -49,7 +49,15 @@ try { textMode = localStorage.getItem("textMode") === "1"; } catch (e) {}
 const TIMES = { s: g => g.minutes[0] <= 15, m: g => g.minutes[0] <= 30 && g.minutes[1] >= 15, l: g => g.minutes[1] > 30 };
 const PLAYER_OPTS = [2, 3, 4, 5, 6];
 const anyFilter = () => Boolean(state.q || state.players || state.decks || state.time || state.diff || state.tags.size);
-const deckCount = g => g.decks === 1 ? UI.deckCount["1"] : fill(UI.deckCount.n, { n: g.decks });
+// decks is a number (1) or a range [min, max]; max null means "or more".
+const deckRange = g => Array.isArray(g.decks) ? g.decks : [g.decks, g.decks];
+const deckShort = g => { const [a, b] = deckRange(g); return b === null ? `${a}+` : a === b ? `${a}` : `${a}–${b}`; };
+const deckCount = g => {
+  const [a, b] = deckRange(g), c = UI.deckCount;
+  if (b === null) return a === 1 ? c["1plus"] : fill(c.nplus, { n: a });
+  if (a === b) return a === 1 ? c["1"] : fill(c.n, { n: a });
+  return fill(c.range, { a, b });
+};
 
 function matches(g) {
   if (state.q) {
@@ -57,7 +65,10 @@ function matches(g) {
     if (!norm(state.q).split(/\s+/).filter(Boolean).every(w => h.includes(w))) return false;
   }
   if (state.players && !(g.players[0] <= state.players && (g.players[1] >= state.players))) return false;
-  if (state.decks && !(state.decks === 3 ? g.decks >= 3 : g.decks === state.decks)) return false;
+  if (state.decks) {
+    const [a, b] = deckRange(g), k = state.decks;
+    if (k === 3 ? !(b === null || b >= 3) : !(a <= k && (b === null || b >= k))) return false;
+  }
   if (state.time && !TIMES[state.time](g)) return false;
   if (state.diff && g.difficulty !== state.diff) return false;
   for (const t of state.tags) if (!g.tags.includes(t)) return false;
@@ -86,7 +97,7 @@ function gameCard(g) {
   return `<a class="gcard" href="#${g.id}">
     <div class="gtop"><div><div class="gname">${esc(g.name)}</div><div class="galias">${esc(g.aliases[0] || "")}</div></div></div>
     <p class="ghook">${esc(g.hook)}</p>
-    <div class="meta"><span>${UI.players} <b>${players(g)}</b></span><span>${UI.decks} <b>${g.decks}</b></span><span>${UI.time} <b>${minutes(g)}</b></span><span>${UI.level} <b>${UI.difficulty[g.difficulty]}</b></span></div>
+    <div class="meta"><span>${UI.players} <b>${players(g)}</b></span><span>${UI.decks} <b>${deckShort(g)}</b></span><span>${UI.time} <b>${minutes(g)}</b></span><span>${UI.level} <b>${UI.difficulty[g.difficulty]}</b></span></div>
     ${tagsHTML(g)}
   </a>`;
 }

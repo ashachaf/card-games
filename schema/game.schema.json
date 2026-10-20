@@ -39,7 +39,7 @@
     "age": { "type": "string" },
     "deck": { "type": "string", "description": "What to bring, in words." },
     "deckType": { "enum": ["standard", "jokers", "stripped"], "description": "What each deck looks like: standard = 52 cards; jokers = 52 + jokers; stripped = some ranks removed." },
-    "decks": { "type": "integer", "minimum": 1, "maximum": 6, "description": "How many decks the base game needs." },
+    "decks": { "description": "How many decks the game needs: a number (1), or a range [min, max] when it works with more. Use null as max for \"or more\", e.g. [1, null].", "oneOf": [ { "type": "integer", "minimum": 1, "maximum": 6 }, { "type": "array", "prefixItems": [ { "type": "integer", "minimum": 1 }, { "type": ["integer", "null"] } ], "minItems": 2, "maxItems": 2 } ] },
     "tags": { "type": "array", "items": { "type": "string" }, "minItems": 2 },
     "goal": { "type": "string" },
     "values": { "type": "array", "items": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/cards" }, { "type": "string" }], "minItems": 2, "maxItems": 2 } },
