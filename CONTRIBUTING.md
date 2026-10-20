@@ -27,6 +27,10 @@ A drawing is a list of rows. Each row has `cards`, an optional `label` and an op
 
 Write cards as rank plus suit letter: `S` ♠, `H` ♥, `D` ♦, `C` ♣. For example `AS`, `10H`, `KD`. Use `X` for a face-down card, `JK` for a joker, `|` for a gap between two groups, and add `*` to highlight a card (`5H*`). Give each drawing a `caption` or `note` that says what it shows, because the text version reads those instead of the drawing.
 
+### Drinking version (optional)
+
+A game can add a `drinking` section: 2–5 extra rules on top of the normal game, such as who drinks when they pick up the pile. Don't change the base rules for it, and don't add the `drinking` tag yourself, because the build adds it. Keep it moderate: sips, not shots, and the loser of the whole game finishes a drink at most. The page always shows a note that it's for adults and works with water or juice.
+
 ### Writing style
 
 - Use plain words. Explain any term of art the first time it appears, like "trump" or "trick".

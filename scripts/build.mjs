@@ -56,6 +56,11 @@ function validate(g, file, tags) {
   strList(g.example, "example", 2);
   strList(g.tips, "tips", 2);
   strList(g.mistakes, "mistakes");
+  if (g.drinking !== undefined) {
+    need(g.drinking && typeof g.drinking === "object", `"drinking" must be an object with "rules"`);
+    if (g.drinking) strList(g.drinking.rules, "drinking.rules", 2);
+    need(!(g.tags || []).includes("drinking"), `don't add the "drinking" tag by hand: it is added when the game has a "drinking" section`);
+  }
   need(Array.isArray(g.variants) && g.variants.every(v => Array.isArray(v) && v.length === 2), `"variants" must be a list of [name, text]`);
   return errs;
 }
@@ -75,6 +80,7 @@ for (const lang of langs) {
     try { g = read(path.join(ROOT, rel)); } catch (e) { errors.push(`${rel}: not valid JSON (${e.message})`); continue; }
     errors.push(...validate(g, rel, i18n.tags));
     delete g.$schema;
+    if (g.drinking && !g.tags.includes("drinking")) g.tags.push("drinking");
     games.push(g);
   }
   games.sort((a, b) => a.name.localeCompare(b.name, lang));
@@ -156,6 +162,7 @@ ${g.values ? `<h2>${ui.values}</h2><ul>${g.values.map(([c, v]) => `<li><bdi dir=
 <h2>${ui.scoring}</h2>${ul(g.scoring)}
 <h2>${ui.example}</h2>${g.example.map(s => `<p>${escHtml(s)}</p>`).join("")}
 <h2>${ui.tips}</h2>${ul(g.tips)}<h3>${ui.mistakes}</h3>${ul(g.mistakes)}
+${g.drinking ? `<h2>${ui.drinking}</h2><p>${escHtml(ui.drinkingNote)}</p>${ul(g.drinking.rules)}` : ""}
 <h2>${ui.variants}</h2><ul>${g.variants.map(([n, t]) => `<li><b>${escHtml(n)}</b>: ${escHtml(t)}</li>`).join("")}</ul>
 <p><a href="./">${escHtml(ui.allGames)}</a> · <a href="../#${g.id}">${escHtml(ui.fullVersion)}</a></p></body></html>\n`));
   }

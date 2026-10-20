@@ -51,6 +51,7 @@
     "tips": { "$ref": "#/$defs/texts", "minItems": 2 },
     "mistakes": { "$ref": "#/$defs/texts", "minItems": 1 },
     "variants": { "type": "array", "items": { "type": "array", "prefixItems": [{ "type": "string" }, { "type": "string" }], "minItems": 2, "maxItems": 2 } },
+    "drinking": { "type": "object", "required": ["rules"], "description": "Optional drinking version: extra rules on top of the normal game. The build adds the \"drinking\" tag automatically.", "properties": { "rules": { "$ref": "#/$defs/texts", "minItems": 2 } } },
     "video": { "type": "string", "description": "A YouTube search phrase, not a link." }
   }
 }

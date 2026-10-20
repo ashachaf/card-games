@@ -150,7 +150,7 @@ function renderGame(g) {
   const values = g.values ? `<section class="sec" id="values"><h2>${UI.values}</h2>
       <div class="values">${g.values.map(([c, v]) => `<span class="val">${cardsHTML(c)}<span>${esc(v)}</span></span>`).join("")}</div>
       ${g.valuesNote ? `<p>${esc(g.valuesNote)}</p>` : ""}</section>` : "";
-  const toc = Object.entries(UI.toc).map(([k, l]) => `<a href="#${g.id}" data-to="${k}">${esc(l)}</a>`).join("");
+  const toc = Object.entries(UI.toc).filter(([k]) => k !== "drinking" || g.drinking).map(([k, l]) => `<a href="#${g.id}" data-to="${k}">${esc(l)}</a>`).join("");
   app.innerHTML = `${bar()}
   <a class="back-link" href="#">${UI.allGames}</a>
   <header class="ghead">
@@ -184,6 +184,8 @@ function renderGame(g) {
     <p>${esc(UI.variantsNote)}</p>
     <div class="variants">${g.variants.map(([n, t]) => `<div class="variant"><b>${esc(n)}</b>${esc(t)}</div>`).join("")}</div>
   </section>
+  ${g.drinking ? `<section class="sec" id="drinking"><h2>${UI.drinking}</h2>
+    <p class="drink-note">${esc(UI.drinkingNote)}</p>${list(g.drinking.rules)}</section>` : ""}
   <section class="sec" id="video"><h2>${UI.video}</h2>
     <a class="video" href="https://www.youtube.com/results?search_query=${encodeURIComponent(g.video)}" target="_blank" rel="noopener">
       <span class="play" aria-hidden="true"></span><span>${UI.videoLink}<small>${UI.videoNote}</small></span>
