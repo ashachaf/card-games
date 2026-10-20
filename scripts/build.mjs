@@ -4,10 +4,12 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { execFileSync } from "node:child_process";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const DIST = path.join(ROOT, "dist");
 const REPO = "https://github.com/ashachaf/card-games";
+const SITE = "https://card-games.win"; // the live address: canonical links, sitemap, previews
 const DEFAULT_LANG = "he";
 const CHECK_ONLY = process.argv.includes("--check");
 
@@ -53,6 +55,7 @@ function validate(g, file, tags) {
   need(Array.isArray(g.turn) && g.turn.length, `"turn" must be a list of steps`);
   (g.turn || []).forEach((s, i) => { need(typeof s.t === "string" && s.t.trim(), `turn ${i + 1}: "t" is required`); visual(s.visual, `turn ${i + 1}`); });
   strList(g.scoring, "scoring");
+  visual(g.scoringVisual, "scoringVisual");
   strList(g.example, "example", 2);
   strList(g.tips, "tips", 2);
   strList(g.mistakes, "mistakes");
@@ -125,23 +128,64 @@ const cardText = (spec, ui) => spec.trim().split(/\s+/).map(t => {
   return t.slice(0, -1) + SUITS[t.slice(-1)] + "︎";
 }).join(" ");
 
-function page(lang, b, base, { offline }) {
-  const { ui } = b;
-  const head = template.replace("__SITE_NAME__", escHtml(ui.siteName)).replace("__DESCRIPTION__", escHtml(ui.title + ". " + ui.intro));
-  const body = `<div class="app" id="app" dir="${ui.dir}" lang="${lang}"></div>
-<script>const DATA = ${json({ ...b, repo: REPO, offline })};</script>
-<script>${appJs}</script>`;
-  return { head, body };
-}
-
 // Card names inside Hebrew sentences get a left-to-right island, so "Q♠" doesn't render as "♠Q".
 const isolateCards = html => html.replace(/>([^<]+)</g, (_, t) => ">" + t.replace(/(?:10|[2-9AJQK])[♠♥♦♣]︎?/g, m => `<bdi dir="ltr">${m}</bdi>`) + "<");
-const outputs = [];
-for (const [lang, b] of Object.entries(bundles)) {
-  const prefix = lang === DEFAULT_LANG ? "" : `${lang}/`;
-  const { ui } = b;
-  const { head, body } = page(lang, b, prefix, { offline: true });
-  outputs.push(write(`${prefix}index.html`, `<!doctype html>
+const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k]);
+
+// ---------- pages ----------
+// The page script runs here too, to pre-render each page: the HTML is complete before any
+// JavaScript runs, so search engines, link previews and phones without JavaScript see it all.
+function views(data) {
+  return new Function("DATA", `${appJs}\nreturn { listHTML, gameHTML, isolateCards };`)(data);
+}
+
+// Last change of a file in git (CI checks out full history), for the sitemap's <lastmod>.
+const lastmod = rel => {
+  try {
+    const d = execFileSync("git", ["log", "-1", "--format=%cI", "--", rel], { cwd: ROOT, encoding: "utf8" }).trim();
+    if (d) return d.slice(0, 10);
+  } catch (e) {}
+  return new Date(fs.statSync(path.join(ROOT, rel)).mtimeMs).toISOString().slice(0, 10);
+};
+
+const langPrefix = lang => (lang === DEFAULT_LANG ? "" : `${lang}/`);
+const urlOf = (lang, rel = "") => `${SITE}/${langPrefix(lang)}${rel}`;
+const OG_IMAGE = `${SITE}/og.png`;
+const clip = (s, n = 160) => (s.length <= n ? s : s.slice(0, s.lastIndexOf(" ", n - 1)) + "…");
+const isoAge = a => String(a).replace("+", "-"); // "8+" -> schema.org "8-"
+
+// Which languages have each page, for hreflang links.
+const gameLangs = {};
+for (const [lang, b] of Object.entries(bundles)) for (const g of b.games) (gameLangs[g.id] ||= []).push(lang);
+const alternates = (langs, rel) => langs.length < 2 ? "" :
+  langs.map(l => `<link rel="alternate" hreflang="${l}" href="${urlOf(l, rel)}">`).join("\n") +
+  `\n<link rel="alternate" hreflang="x-default" href="${urlOf(langs.includes(DEFAULT_LANG) ? DEFAULT_LANG : langs[0], rel)}">`;
+
+function seoHead({ lang, ui, title, description, url, type = "website", jsonld, alt = "" }) {
+  return [
+    `<link rel="canonical" href="${url}">`,
+    alt,
+    `<meta property="og:type" content="${type}">`,
+    `<meta property="og:site_name" content="${escHtml(ui.siteName)}">`,
+    `<meta property="og:title" content="${escHtml(title)}">`,
+    `<meta property="og:description" content="${escHtml(description)}">`,
+    `<meta property="og:url" content="${url}">`,
+    `<meta property="og:locale" content="${ui.locale || lang}">`,
+    `<meta property="og:image" content="${OG_IMAGE}">`,
+    `<meta property="og:image:width" content="1200">`,
+    `<meta property="og:image:height" content="630">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+    `<script type="application/ld+json">${json(jsonld)}</script>`
+  ].filter(Boolean).join("\n");
+}
+
+function htmlPage({ lang, ui, base, title, description, seo, data, prerendered, offline = true }) {
+  const head = template
+    .replace("__TITLE__", escHtml(title))
+    .replace("__DESCRIPTION__", escHtml(description))
+    .replace("__BASE__", base)
+    .replace("__SEO__", seo);
+  return `<!doctype html>
 <html lang="${lang}" dir="${ui.dir}">
 <head>
 <meta charset="utf-8">
@@ -149,19 +193,89 @@ for (const [lang, b] of Object.entries(bundles)) {
 ${head}
 </head>
 <body>
-${body}
+<div class="app" id="app" dir="${ui.dir}" lang="${lang}">${prerendered}</div>
+<script>const DATA = ${json({ ...data, repo: REPO, base, offline })};</script>
+<script>${appJs}</script>
 </body>
 </html>
-`));
+`;
+}
+
+const outputs = [];
+const sitemap = [];
+const llms = [];
+for (const [lang, b] of Object.entries(bundles)) {
+  const prefix = langPrefix(lang);
+  const { ui } = b;
+  const homeUrl = urlOf(lang);
+  const website = { "@type": "WebSite", "@id": `${homeUrl}#website`, name: ui.siteName, url: homeUrl, inLanguage: lang, description: ui.intro };
+
+  // Home: every game, filters work on the pre-rendered list.
+  const homeTitle = ui.homeTitle;
+  outputs.push(write(`${prefix}index.html`, htmlPage({
+    lang, ui, base: lang === DEFAULT_LANG ? "" : "../",
+    title: homeTitle, description: clip(`${ui.intro} ${ui.footNote}`),
+    seo: seoHead({ lang, ui, title: homeTitle, description: clip(ui.intro), url: homeUrl, alt: alternates(Object.keys(bundles), ""), jsonld: {
+      "@context": "https://schema.org",
+      "@graph": [website, { "@type": "ItemList", name: ui.title, itemListElement: b.games.map((g, i) => ({ "@type": "ListItem", position: i + 1, url: urlOf(lang, `games/${g.id}/`), name: g.name })) }]
+    } }),
+    data: b,
+    prerendered: views({ ...b, base: lang === DEFAULT_LANG ? "" : "../" }).isolateCards(views({ ...b, base: lang === DEFAULT_LANG ? "" : "../" }).listHTML())
+  })));
+  sitemap.push({ loc: homeUrl, lastmod: b.games.map(g => lastmod(`games/${lang}/${g.id}.json`)).sort().pop(), langs: Object.keys(bundles), rel: "" });
+  llms.push(`# ${ui.siteName}`, "", `> ${ui.title}. ${ui.intro}`, "");
+
+  // One page per game.
+  for (const g of b.games) {
+    const rel = `games/${g.id}/`;
+    const url = urlOf(lang, rel);
+    const base = lang === DEFAULT_LANG ? "../../" : "../../../";
+    const data = { ui, tags: b.tags, coming: [], games: [g], page: g.id };
+    const v = views({ ...data, base });
+    const title = fill(ui.gameTitle, { name: g.name });
+    const description = clip(`${g.hook} ${ui.players}: ${g.players[0]}–${g.players[1]}. ${g.goal}`);
+    const steps = [...g.setup.steps, ...g.turn.map(s => s.t)];
+    outputs.push(write(`${prefix}${rel}index.html`, htmlPage({
+      lang, ui, base, title, description, data,
+      prerendered: v.isolateCards(v.gameHTML(g)),
+      seo: seoHead({ lang, ui, title, description, url, type: "article", alt: alternates(gameLangs[g.id], rel), jsonld: {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Game", "@id": `${url}#game`, name: g.name, alternateName: g.aliases, url, description: g.hook,
+            inLanguage: lang, image: OG_IMAGE, isPartOf: { "@id": `${homeUrl}#website` },
+            numberOfPlayers: { "@type": "QuantitativeValue", minValue: g.players[0], maxValue: g.players[1] },
+            typicalAgeRange: isoAge(g.age), timeRequired: `PT${g.minutes[1]}M`,
+            keywords: g.tags.map(t => b.tags[t]).join(", ")
+          },
+          {
+            "@type": "HowTo", name: fill(ui.howToName, { name: g.name }), inLanguage: lang, url,
+            totalTime: `PT${g.minutes[1]}M`, supply: [{ "@type": "HowToSupply", name: g.deck }],
+            step: steps.map((t, i) => ({ "@type": "HowToStep", position: i + 1, text: t }))
+          },
+          {
+            "@type": "BreadcrumbList", itemListElement: [
+              { "@type": "ListItem", position: 1, name: ui.siteName, item: homeUrl },
+              { "@type": "ListItem", position: 2, name: g.name, item: url }
+            ]
+          }
+        ]
+      } })
+    })));
+    sitemap.push({ loc: url, lastmod: lastmod(`games/${lang}/${g.id}.json`), langs: gameLangs[g.id], rel });
+    llms.push(`- [${g.name}](${url}): ${g.hook}`);
+  }
+  llms.push("", `- [${ui.textVersion}](${urlOf(lang, "text/")})`, "");
 
   // The text version: one tiny page per game, no scripts, no fonts, no images.
-  const tHead = title => `<!doctype html><html lang="${lang}" dir="${ui.dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(title)}</title><style>body{font:17px/1.6 Arial,sans-serif;max-width:40rem;margin:0 auto;padding:1rem}</style></head><body>`;
+  // Its canonical is the full game page, so search engines don't count it twice.
+  const tHead = (title, canonical) => `<!doctype html><html lang="${lang}" dir="${ui.dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(title)}</title><link rel="canonical" href="${canonical}"><style>body{font:17px/1.6 Arial,sans-serif;max-width:40rem;margin:0 auto;padding:1rem}</style></head><body>`;
   const ul = items => `<ul>${items.map(s => `<li>${escHtml(s)}</li>`).join("")}</ul>`;
   const vis = v => v ? `<ul>${v.rows.map(r => `<li>${r.label ? escHtml(r.label) + ": " : ""}<bdi dir="ltr">${escHtml(cardText(r.cards, ui))}</bdi>${r.note ? ` (${escHtml(r.note)})` : ""}</li>`).join("")}</ul>${v.caption ? `<p>${escHtml(v.caption)}</p>` : ""}` : "";
-  outputs.push(write(`${prefix}text/index.html`, `${tHead(ui.siteName)}<h1>${escHtml(ui.siteName)}</h1><p>${escHtml(ui.title)}</p><ul>${b.games.map(g => `<li><a href="${g.id}.html">${escHtml(g.name)}</a>: ${escHtml(g.hook)}</li>`).join("")}</ul><p><a href="../">${escHtml(ui.fullVersion)}</a></p></body></html>\n`));
+  outputs.push(write(`${prefix}text/index.html`, `${tHead(ui.siteName, homeUrl)}<h1>${escHtml(ui.siteName)}</h1><p>${escHtml(ui.title)}</p><ul>${b.games.map(g => `<li><a href="${g.id}.html">${escHtml(g.name)}</a>: ${escHtml(g.hook)}</li>`).join("")}</ul><p><a href="../">${escHtml(ui.fullVersion)}</a></p></body></html>\n`));
   for (const g of b.games) {
     const players = g.players[0] === g.players[1] ? g.players[0] : `${g.players[0]}–${g.players[1]}`;
-    outputs.push(write(`${prefix}text/${g.id}.html`, isolateCards(`${tHead(g.name)}<p><a href="./">${escHtml(ui.allGames)}</a></p>
+    outputs.push(write(`${prefix}text/${g.id}.html`, isolateCards(`${tHead(g.name, urlOf(lang, `games/${g.id}/`))}<p><a href="./">${escHtml(ui.allGames)}</a></p>
 <h1>${escHtml(g.name)}</h1><p>${escHtml(g.hook)}</p>
 <p>${ui.players}: ${players} (${ui.best}: ${escHtml(g.best)}) · ${ui.time}: ${g.minutes[0]}–${g.minutes[1]} ${ui.minutesUnit} · ${ui.level}: ${ui.difficulty[g.difficulty]} · ${ui.age}: ${escHtml(g.age)}<br>${ui.need}: ${escHtml(g.deck)} (${deckCount(g, ui)})</p>
 <h2>${ui.goal}</h2><p>${escHtml(g.goal)}</p>
@@ -171,30 +285,52 @@ ${g.values ? `<h2>${ui.values}</h2><ul>${g.values.map(([c, v]) => `<li><bdi dir=
 <h2>${ui.setup}</h2><ol>${g.setup.steps.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>${vis(g.setup.visual)}
 <h2>${ui.turn}</h2><ol>${g.turn.map(s => `<li>${escHtml(s.t)}${vis(s.visual)}</li>`).join("")}</ol>
 ${g.combos ? `<h2>${ui.combos}</h2>${g.combos.note ? `<p>${escHtml(g.combos.note)}</p>` : ""}<ul>${g.combos.items.map(c => `<li><b>${escHtml(c.name)}</b> (${escHtml(c.points)}): <bdi dir="ltr">${escHtml(cardText(c.cards, ui))}</bdi>${c.text ? `. ${escHtml(c.text)}` : ""}</li>`).join("")}</ul>` : ""}
-<h2>${ui.scoring}</h2>${ul(g.scoring)}
+<h2>${ui.scoring}</h2>${ul(g.scoring)}${vis(g.scoringVisual)}
 <h2>${ui.example}</h2>${g.example.map(s => `<p>${escHtml(s)}</p>`).join("")}
 <h2>${ui.tips}</h2>${ul(g.tips)}<h3>${ui.mistakes}</h3>${ul(g.mistakes)}
 ${g.drinking ? `<h2>${ui.drinking}</h2><p>${escHtml(ui.drinkingNote)}</p>${ul(g.drinking.rules)}` : ""}
 <h2>${ui.variants}</h2><ul>${g.variants.map(([n, t]) => `<li><b>${escHtml(n)}</b>: ${escHtml(t)}</li>`).join("")}</ul>
-<p><a href="./">${escHtml(ui.allGames)}</a> · <a href="../#${g.id}">${escHtml(ui.fullVersion)}</a></p></body></html>\n`)));
+<p><a href="./">${escHtml(ui.allGames)}</a> · <a href="../games/${g.id}/">${escHtml(ui.fullVersion)}</a></p></body></html>\n`)));
   }
 }
 
-// One file for previews (e.g. a claude.ai artifact): no doctype wrapper, offline off.
+// One file for previews (e.g. a claude.ai artifact): one page, games open by #id, offline off.
 {
   const b = bundles[DEFAULT_LANG];
-  const { head, body } = page(DEFAULT_LANG, b, "", { offline: false });
-  write("preview.html", head.replace(/<link rel="manifest"[^>]*>\n?/, "") + "\n" + body + "\n");
+  const v = views({ ...b, hashRoutes: true });
+  const head = template.replace("__TITLE__", escHtml(b.ui.siteName)).replace("__DESCRIPTION__", escHtml(b.ui.intro)).replace("__BASE__", "").replace("__SEO__", "").replace(/<link rel="manifest"[^>]*>\n?/, "");
+  write("preview.html", `${head}
+<div class="app" id="app" dir="${b.ui.dir}" lang="${DEFAULT_LANG}">${v.isolateCards(v.listHTML())}</div>
+<script>const DATA = ${json({ ...b, repo: REPO, hashRoutes: true, offline: false })};</script>
+<script>${appJs}</script>
+`);
 }
 
 const ui0 = bundles[DEFAULT_LANG].ui;
 write("manifest.webmanifest", JSON.stringify({
   name: ui0.siteName, short_name: ui0.siteName, lang: DEFAULT_LANG, dir: ui0.dir,
-  start_url: "./", display: "standalone", background_color: "#f2f3f7", theme_color: "#23408f"
+  start_url: "/", scope: "/", display: "standalone", background_color: "#f2f3f7", theme_color: "#23408f",
+  icons: [{ src: "/icon.png", sizes: "512x512", type: "image/png" }]
 }, null, 2));
+fs.copyFileSync(path.join(ROOT, "site", "og.png"), path.join(DIST, "og.png"));
+fs.copyFileSync(path.join(ROOT, "site", "icon.png"), path.join(DIST, "icon.png"));
+
+// ---------- SEO files ----------
+write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+${sitemap.map(s => `  <url>
+    <loc>${s.loc}</loc>
+    <lastmod>${s.lastmod}</lastmod>${s.langs.length > 1 ? "\n" + s.langs.map(l => `    <xhtml:link rel="alternate" hreflang="${l}" href="${urlOf(l, s.rel)}"/>`).join("\n") : ""}
+  </url>`).join("\n")}
+</urlset>
+`);
+write("robots.txt", `User-agent: *\nAllow: /\nDisallow: /preview.html\n\nSitemap: ${SITE}/sitemap.xml\n`);
+write("llms.txt", llms.join("\n").trim() + "\n");
+write("404.html", `<!doctype html><html lang="${DEFAULT_LANG}" dir="${ui0.dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${escHtml(ui0.notFound)}</title><style>body{font:18px/1.6 Arial,sans-serif;max-width:32rem;margin:0 auto;padding:3rem 1rem;text-align:center}</style></head><body><h1>${escHtml(ui0.notFound)}</h1><p><a href="/">${escHtml(ui0.allGames)}</a></p></body></html>\n`);
+write("CNAME", new URL(SITE).host + "\n");
 
 // Service worker: caches every page on first visit, so the site works offline.
-const files = outputs.map(p => "./" + path.relative(DIST, p).replace(/index\.html$/, "")).concat(["./manifest.webmanifest"]);
+const files = outputs.map(p => "/" + path.relative(DIST, p).replace(/index\.html$/, "")).concat(["/manifest.webmanifest", "/icon.png"]);
 const hash = crypto.createHash("sha256").update(outputs.map(p => fs.readFileSync(p)).join("")).digest("hex").slice(0, 10);
 write("sw.js", `const CACHE = "card-games-${hash}";
 const FILES = ${JSON.stringify(files)};
@@ -207,9 +343,9 @@ self.addEventListener("fetch", e => {
       const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy));
     }
     return res;
-  }).catch(() => caches.match("./"))));
+  }).catch(() => caches.match("/"))));
 });
 `);
 
 const size = p => (fs.statSync(path.join(DIST, p)).size / 1024).toFixed(1) + " KB";
-console.log(`✓ built dist/: index.html ${size("index.html")}, text/yaniv.html ${fs.existsSync(path.join(DIST, "text/yaniv.html")) ? size("text/yaniv.html") : "-"}, ${files.length} cached files`);
+console.log(`✓ built dist/: home ${size("index.html")}, games/yaniv ${size("games/yaniv/index.html")}, ${sitemap.length} URLs in sitemap, ${files.length} cached files`);

@@ -34,10 +34,14 @@ scripts/build.mjs        checks every game, then builds dist/
 
 `npm run build` writes `dist/`:
 
-- `index.html`: the whole site in one file (about 45 KB), with every game inlined.
+- `index.html`: the home page with every game, search and filters.
 - `text/<id>.html`: a script-free, font-free page per game (about 6 KB).
 - `sw.js` + `manifest.webmanifest`: offline support after the first visit.
 - `preview.html`: the same site as one file without offline mode, for previews.
+- `games/<id>/`: a pre-rendered page per game with its own title, description, canonical link, Open Graph preview and schema.org data (`Game`, `HowTo`, `BreadcrumbList`).
+- `sitemap.xml` (dated from each game's last commit), `robots.txt`, `llms.txt`, `404.html`, the share image `og.png` and the app icon.
+
+All of it is generated from `games/`, so a new game gets its page and its sitemap entry on the next push. To redraw `site/og.png` and `site/icon.png`, run `python3 scripts/make-images.py`.
 
 Other languages build to `dist/<lang>/`. There are no dependencies. You need only Node 18+.
 
@@ -47,7 +51,7 @@ npm run build   # validate and build
 npm run serve   # build, then serve dist/ on http://localhost:8765
 ```
 
-Every game page has a plain anchor (`/#yaniv`), so each game can get its own QR code.
+Every game has its own address (`/games/yaniv/`), so each game can get its own QR code. Old `/#yaniv` links redirect there.
 
 ## Contributing
 

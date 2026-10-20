@@ -1,9 +1,10 @@
-/* The site's only script. The build inlines it after `const DATA = { ui, tags, coming, games }`.
+/* The site's only script. The build inlines it after `const DATA = { ui, tags, coming, games, base, page, ... }`,
+   and also runs it in Node to pre-render each page (everything outside the browser-only block is pure).
    Card tokens: rank + suit letter (S ♠ H ♥ D ♦ C ♣), X = face-down card, JK = joker, | = gap, trailing * = highlighted. */
 const { ui: UI, tags: TAGS, coming: COMING, games: GAMES } = DATA;
 
 const SUITS = { S: "♠", H: "♥", D: "♦", C: "♣" };
-const VS = "︎"; // keep suits as text, not emoji
+const VS = "\uFE0E"; // keep suits as text, not emoji
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k]);
 
@@ -35,7 +36,7 @@ const minutes = g => `${g.minutes[0]}–${g.minutes[1]} ${UI.minutesUnit}`;
 
 function norm(s) {
   return String(s).toLowerCase()
-    .replace(/[֑-ׇ]/g, "")
+    .replace(/[\u0591-\u05C7]/g, "")
     .replace(/[ךםןףץ]/g, c => ({ "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" }[c]))
     .replace(/['"׳״\-–]/g, "");
 }
@@ -75,13 +76,17 @@ function matches(g) {
   return true;
 }
 
-/* ---------- views ---------- */
-const app = document.getElementById("app");
-document.documentElement.lang = UI.lang;
+/* ---------- links ----------
+   On the real site every game has its own page (games/<id>/). In a one-file preview there is
+   only one page, so games open by #<id> instead. DATA.base is the path back to the site root. */
+const BASE = DATA.base || "";
+const homeHref = DATA.hashRoutes ? "#" : (BASE || "./");
+const gameHref = id => DATA.hashRoutes ? `#${id}` : `${BASE}games/${id}/`;
 
+/* ---------- views: plain strings, so the build can pre-render them ---------- */
 function bar() {
   return `<div class="bar">
-    <a class="brand" href="#">
+    <a class="brand" href="${homeHref}">
       <span class="brand-fan" aria-hidden="true">${cardsHTML("AS KH QD")}</span>
       <span class="brand-name">${esc(UI.siteName)}</span>
     </a>
@@ -94,17 +99,24 @@ const chip = (group, value, label, on) =>
 const tagsHTML = g => `<div class="tags">${g.tags.map(t => `<span class="tag">${esc(TAGS[t])}</span>`).join("")}</div>`;
 
 function gameCard(g) {
-  return `<a class="gcard" href="#${g.id}">
-    <div class="gtop"><div><div class="gname">${esc(g.name)}</div><div class="galias">${esc(g.aliases[0] || "")}</div></div></div>
+  return `<a class="gcard" href="${gameHref(g.id)}">
+    <div class="gtop"><div><h2 class="gname">${esc(g.name)}</h2><div class="galias">${esc(g.aliases[0] || "")}</div></div></div>
     <p class="ghook">${esc(g.hook)}</p>
     <div class="meta"><span>${UI.players} <b>${players(g)}</b></span><span>${UI.decks} <b>${deckShort(g)}</b></span><span>${UI.time} <b>${minutes(g)}</b></span><span>${UI.level} <b>${UI.difficulty[g.difficulty]}</b></span></div>
     ${tagsHTML(g)}
   </a>`;
 }
 
-function renderList() {
+function resultsHTML() {
+  const list = GAMES.filter(matches);
+  const count = list.length === GAMES.length ? fill(UI.countAll, { n: GAMES.length }) : fill(UI.countSome, { n: list.length, total: GAMES.length });
+  return `<div class="count"><span>${count}</span>${anyFilter() ? `<button class="clear" id="clear" type="button">${UI.clear}</button>` : ""}</div>
+  ${list.length ? `<div class="grid">${list.map(gameCard).join("")}</div>` : `<div class="empty">${esc(UI.empty)}</div>`}`;
+}
+
+function listHTML() {
   const usedTags = Object.keys(TAGS).filter(t => GAMES.some(g => g.tags.includes(t)));
-  app.innerHTML = `${bar()}
+  return `${bar()}
   <header class="intro"><h1>${esc(UI.title)}</h1><p>${esc(UI.intro)}</p></header>
   <input class="search" id="q" type="search" placeholder="${esc(UI.searchPlaceholder)}" value="${esc(state.q)}" aria-label="${esc(UI.searchLabel)}">
   <div class="filters">
@@ -114,45 +126,20 @@ function renderList() {
     <div class="frow"><span class="flabel">${UI.level}</span>${[1, 2, 3].map(d => chip("diff", d, UI.difficulty[d], state.diff === d)).join("")}</div>
     <div class="frow"><span class="flabel">${UI.type}</span>${usedTags.map(t => chip("tags", t, TAGS[t], state.tags.has(t))).join("")}</div>
   </div>
-  <div id="results" class="results"></div>
+  <div id="results" class="results">${resultsHTML()}</div>
   <p class="foot">${COMING.length ? esc(fill(UI.comingSoon, { list: COMING.join(", ") })) + "<br>" : ""}${esc(UI.footNote)}<br>
-    <a href="text/">${esc(UI.textVersion)}</a> · <a href="${DATA.repo}" target="_blank" rel="noopener">${esc(UI.contribute)}</a></p>`;
-  renderResults();
-
-  const q = document.getElementById("q");
-  q.addEventListener("input", () => { state.q = q.value; renderResults(); });
-  app.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
-    const g = b.dataset.g, raw = b.dataset.v;
-    const v = g === "players" || g === "diff" || g === "decks" ? Number(raw) : raw;
-    if (g === "tags") { state.tags.has(v) ? state.tags.delete(v) : state.tags.add(v); b.setAttribute("aria-pressed", state.tags.has(v)); }
-    else {
-      state[g] = state[g] === v ? null : v;
-      app.querySelectorAll(`.chip[data-g="${g}"]`).forEach(o => o.setAttribute("aria-pressed", String(o.dataset.v) === String(state[g])));
-    }
-    renderResults();
-  }));
-  bindMode();
-}
-
-function renderResults() {
-  const list = GAMES.filter(matches);
-  const el = document.getElementById("results");
-  const count = list.length === GAMES.length ? fill(UI.countAll, { n: GAMES.length }) : fill(UI.countSome, { n: list.length, total: GAMES.length });
-  el.innerHTML = `<div class="count"><span>${count}</span>${anyFilter() ? `<button class="clear" id="clear" type="button">${UI.clear}</button>` : ""}</div>
-  ${list.length ? `<div class="grid">${list.map(gameCard).join("")}</div>` : `<div class="empty">${esc(UI.empty)}</div>`}`;
-  const c = document.getElementById("clear");
-  if (c) c.addEventListener("click", () => { state.q = ""; state.players = state.decks = state.time = state.diff = null; state.tags.clear(); renderList(); });
+    <a href="${BASE}text/">${esc(UI.textVersion)}</a> · <a href="${DATA.repo}" target="_blank" rel="noopener">${esc(UI.contribute)}</a></p>`;
 }
 
 const list = items => `<ul class="bul">${items.map(s => `<li>${esc(s)}</li>`).join("")}</ul>`;
 
-function renderGame(g) {
+function gameHTML(g) {
   const values = g.values ? `<section class="sec" id="values"><h2>${UI.values}</h2>
       <div class="values">${g.values.map(([c, v]) => `<span class="val">${cardsHTML(c)}<span>${esc(v)}</span></span>`).join("")}</div>
       ${g.valuesNote ? `<p>${esc(g.valuesNote)}</p>` : ""}</section>` : "";
-  const toc = Object.entries(UI.toc).filter(([k]) => (k !== "drinking" || g.drinking) && (k !== "combos" || g.combos)).map(([k, l]) => `<a href="#${g.id}" data-to="${k}">${esc(l)}</a>`).join("");
-  app.innerHTML = `${bar()}
-  <a class="back-link" href="#">${UI.allGames}</a>
+  const toc = Object.entries(UI.toc).filter(([k]) => (k !== "drinking" || g.drinking) && (k !== "combos" || g.combos)).map(([k, l]) => `<a href="#${k}" data-to="${k}">${esc(l)}</a>`).join("");
+  return `${bar()}
+  <a class="back-link" href="${homeHref}">${UI.allGames}</a>
   <header class="ghead">
     <h1>${esc(g.name)}</h1>
     <div class="galias">${g.aliases.map(esc).join(" · ")}</div>
@@ -181,7 +168,7 @@ function renderGame(g) {
     ${g.combos.note ? `<p>${esc(g.combos.note)}</p>` : ""}
     <div class="combos">${g.combos.items.map(c => `<div class="combo"><div class="combo-head"><b>${esc(c.name)}</b><span class="pts">${esc(c.points)}</span></div>${cardsHTML(c.cards)}${c.text ? `<p>${esc(c.text)}</p>` : ""}</div>`).join("")}</div>
   </section>` : ""}
-  <section class="sec" id="scoring"><h2>${UI.scoring}</h2>${list(g.scoring)}</section>
+  <section class="sec" id="scoring"><h2>${UI.scoring}</h2>${list(g.scoring)}${visualHTML(g.scoringVisual)}</section>
   <section class="sec" id="example"><h2>${UI.example}</h2>
     <div class="story">${g.example.map(s => `<p>${esc(s)}</p>`).join("")}</div>
   </section>
@@ -198,57 +185,80 @@ function renderGame(g) {
     </a>
   </section>
   ${tagsHTML(g)}
-  <p class="foot"><a href="${DATA.repo}/issues/new?template=unclear.yml&title=${encodeURIComponent(g.name + " (" + g.id + "): ")}" target="_blank" rel="noopener">${esc(UI.unclear)}</a></p>
-  <a class="back-link" href="#">${UI.allGames}</a>`;
-  const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
-  app.querySelectorAll(".toc a").forEach(a => a.addEventListener("click", e => {
-    e.preventDefault(); document.getElementById(a.dataset.to).scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
-  }));
-  bindMode();
+  <p class="foot"><a href="${BASE}text/${g.id}.html">${esc(UI.textVersion)}</a> · <a href="${DATA.repo}/issues/new?template=unclear.yml&title=${encodeURIComponent(g.name + " (" + g.id + "): ")}" target="_blank" rel="noopener">${esc(UI.unclear)}</a></p>
+  <a class="back-link" href="${homeHref}">${UI.allGames}</a>`;
 }
-
-function bindMode() {
-  const b = document.getElementById("mode");
-  b.addEventListener("click", () => {
-    textMode = !textMode;
-    try { localStorage.setItem("textMode", textMode ? "1" : "0"); } catch (e) {}
-    applyMode(); b.setAttribute("aria-pressed", textMode);
-  });
-}
-const applyMode = () => document.body.classList.toggle("text-mode", textMode);
 
 /* Card names inside Hebrew sentences ("Q♠", "10♥") need their own left-to-right island,
-   or the suit symbol jumps to the wrong side of the rank. */
-const CARD_IN_TEXT = /(?:10|[2-9AJQK])[♠♥♦♣]︎?/g;
-function isolateCards(root) {
-  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode: n => n.parentElement.closest(".cards, bdi, script, style") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
-  });
-  const nodes = [];
-  while (walk.nextNode()) { CARD_IN_TEXT.lastIndex = 0; if (CARD_IN_TEXT.test(walk.currentNode.data)) nodes.push(walk.currentNode); }
-  for (const n of nodes) {
-    CARD_IN_TEXT.lastIndex = 0;
-    const frag = document.createDocumentFragment(); let last = 0, m;
-    while ((m = CARD_IN_TEXT.exec(n.data))) {
-      frag.append(n.data.slice(last, m.index));
-      const b = document.createElement("bdi"); b.dir = "ltr"; b.textContent = m[0]; frag.append(b);
-      last = m.index + m[0].length;
-    }
-    frag.append(n.data.slice(last)); n.replaceWith(frag);
+   or the suit symbol jumps to the wrong side of the rank. Works on an HTML string, so the
+   build and the browser produce the same markup. Skips card drawings and attributes. */
+function isolateCards(html) {
+  return html.replace(/(<span class="cards"[\s\S]*?class="ctext"[^>]*>[^<]*<\/span><\/span>)|>([^<]+)</g, (m, drawing, text) =>
+    drawing ? drawing : ">" + text.replace(/(?:10|[2-9AJQK])[♠♥♦♣]︎?/g, c => `<bdi dir="ltr">${c}</bdi>`) + "<");
+}
+
+/* ---------- browser only ---------- */
+if (typeof document !== "undefined") {
+  const app = document.getElementById("app");
+
+  const bindMode = () => {
+    const b = document.getElementById("mode");
+    b.addEventListener("click", () => {
+      textMode = !textMode;
+      try { localStorage.setItem("textMode", textMode ? "1" : "0"); } catch (e) {}
+      applyMode(); b.setAttribute("aria-pressed", textMode);
+    });
+  };
+  const applyMode = () => document.body.classList.toggle("text-mode", textMode);
+
+  const renderResults = () => {
+    const el = document.getElementById("results");
+    el.innerHTML = isolateCards(resultsHTML());
+    const c = document.getElementById("clear");
+    if (c) c.addEventListener("click", () => { state.q = ""; state.players = state.decks = state.time = state.diff = null; state.tags.clear(); renderList(); });
+  };
+
+  const renderList = () => {
+    app.innerHTML = isolateCards(listHTML());
+    const q = document.getElementById("q");
+    q.addEventListener("input", () => { state.q = q.value; renderResults(); });
+    app.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+      const g = b.dataset.g, raw = b.dataset.v;
+      const v = g === "players" || g === "diff" || g === "decks" ? Number(raw) : raw;
+      if (g === "tags") { state.tags.has(v) ? state.tags.delete(v) : state.tags.add(v); b.setAttribute("aria-pressed", state.tags.has(v)); }
+      else {
+        state[g] = state[g] === v ? null : v;
+        app.querySelectorAll(`.chip[data-g="${g}"]`).forEach(o => o.setAttribute("aria-pressed", String(o.dataset.v) === String(state[g])));
+      }
+      renderResults();
+    }));
+    bindMode();
+  };
+
+  const renderGame = g => {
+    app.innerHTML = isolateCards(gameHTML(g));
+    const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    app.querySelectorAll(".toc a").forEach(a => a.addEventListener("click", e => {
+      e.preventDefault(); document.getElementById(a.dataset.to).scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+    }));
+    bindMode();
+  };
+
+  const route = () => {
+    const fromHash = GAMES.find(x => x.id === location.hash.slice(1));
+    // Old links like card-games.win/#yaniv now live at games/yaniv/.
+    if (!DATA.hashRoutes && !DATA.page && fromHash) { location.replace(gameHref(fromHash.id)); return; }
+    const g = DATA.page ? GAMES.find(x => x.id === DATA.page) : DATA.hashRoutes ? fromHash : null;
+    g ? renderGame(g) : renderList();
+    applyMode();
+    if (DATA.hashRoutes) window.scrollTo(0, 0);
+  };
+  document.documentElement.lang = UI.lang;
+  if (DATA.hashRoutes) window.addEventListener("hashchange", route);
+  route();
+
+  /* Offline: cache the site after the first visit. Only on the real site (https), never inside a preview frame. */
+  if ("serviceWorker" in navigator && location.protocol === "https:" && DATA.offline) {
+    navigator.serviceWorker.register(`${BASE}sw.js`).catch(() => {});
   }
-}
-
-function route() {
-  const g = GAMES.find(x => x.id === location.hash.slice(1));
-  g ? renderGame(g) : renderList();
-  isolateCards(app);
-  applyMode();
-  window.scrollTo(0, 0);
-}
-window.addEventListener("hashchange", route);
-route();
-
-/* Offline: cache the site after the first visit. Only on the real site (https), never inside a preview frame. */
-if ("serviceWorker" in navigator && location.protocol === "https:" && DATA.offline) {
-  navigator.serviceWorker.register("sw.js").catch(() => {});
 }
