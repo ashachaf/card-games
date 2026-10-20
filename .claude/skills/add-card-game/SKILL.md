@@ -31,6 +31,7 @@ Start from an existing file such as `games/he/yaniv.json`, and fill every field:
 - `example`: 3–5 short paragraphs of one real round with named players and real cards, including one moment where a rule matters.
 - `tips` (2–4) and `mistakes` (2–3): what a first-time player needs, and what they really get wrong.
 - `variants`: `[name, text]` pairs for common house rules.
+- `inShort` (required for difficulty 3, recommended when the turn has more than 6 steps), `glossary` for terms of art, and `combos` for scoring combinations. Never pack a list of combinations into one turn step.
 - `drinking` (optional): `{ "rules": [...] }`, 2–5 extra rules layered on the normal game, moderate (sips; at most the overall loser finishes a drink). Never add the `drinking` tag by hand; the build adds it.
 - `video`: a YouTube search phrase (Hebrew if videos exist in Hebrew, otherwise English).
 - `tags`: 2–6 tags from `i18n/he.json` only.
@@ -44,3 +45,5 @@ Card codes: rank + `S`/`H`/`D`/`C` (`AS`, `10H`, `KD`), `X` face down, `JK` joke
 Run `npm run check`. Then `npm run build` and open `dist/index.html#<id>` (or `npm run serve`) to see the page. Read the page once as someone who has never played: could they start a game from it alone?
 
 When you add the game, remove it from `coming` in `i18n/he.json` if it's listed there.
+
+After writing, run the `review-card-game` skill on the new game and fix what it finds.

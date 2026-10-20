@@ -61,6 +61,13 @@ function validate(g, file, tags) {
     if (g.drinking) strList(g.drinking.rules, "drinking.rules", 2);
     need(!(g.tags || []).includes("drinking"), `don't add the "drinking" tag by hand: it is added when the game has a "drinking" section`);
   }
+  if (g.inShort !== undefined) strList(g.inShort, "inShort", 2);
+  if (g.glossary !== undefined) need(Array.isArray(g.glossary) && g.glossary.every(x => Array.isArray(x) && x.length === 2), `"glossary" must be a list of [word, meaning]`);
+  if (g.combos !== undefined) {
+    need(g.combos && Array.isArray(g.combos.items) && g.combos.items.length, `"combos.items" must be a list`);
+    (g.combos?.items || []).forEach((c, i) => { need(c.name && c.points, `combos ${i + 1}: "name" and "points" are required`); cards(c.cards, `combos ${i + 1}`); });
+  }
+  if (g.difficulty === 3) need(g.inShort, `hard games (difficulty 3) need an "inShort" summary`);
   need(Array.isArray(g.variants) && g.variants.every(v => Array.isArray(v) && v.length === 2), `"variants" must be a list of [name, text]`);
   return errs;
 }
@@ -127,6 +134,8 @@ function page(lang, b, base, { offline }) {
   return { head, body };
 }
 
+// Card names inside Hebrew sentences get a left-to-right island, so "Q♠" doesn't render as "♠Q".
+const isolateCards = html => html.replace(/>([^<]+)</g, (_, t) => ">" + t.replace(/(?:10|[2-9AJQK])[♠♥♦♣]︎?/g, m => `<bdi dir="ltr">${m}</bdi>`) + "<");
 const outputs = [];
 for (const [lang, b] of Object.entries(bundles)) {
   const prefix = lang === DEFAULT_LANG ? "" : `${lang}/`;
@@ -152,19 +161,22 @@ ${body}
   outputs.push(write(`${prefix}text/index.html`, `${tHead(ui.siteName)}<h1>${escHtml(ui.siteName)}</h1><p>${escHtml(ui.title)}</p><ul>${b.games.map(g => `<li><a href="${g.id}.html">${escHtml(g.name)}</a>: ${escHtml(g.hook)}</li>`).join("")}</ul><p><a href="../">${escHtml(ui.fullVersion)}</a></p></body></html>\n`));
   for (const g of b.games) {
     const players = g.players[0] === g.players[1] ? g.players[0] : `${g.players[0]}–${g.players[1]}`;
-    outputs.push(write(`${prefix}text/${g.id}.html`, `${tHead(g.name)}<p><a href="./">${escHtml(ui.allGames)}</a></p>
+    outputs.push(write(`${prefix}text/${g.id}.html`, isolateCards(`${tHead(g.name)}<p><a href="./">${escHtml(ui.allGames)}</a></p>
 <h1>${escHtml(g.name)}</h1><p>${escHtml(g.hook)}</p>
 <p>${ui.players}: ${players} (${ui.best}: ${escHtml(g.best)}) · ${ui.time}: ${g.minutes[0]}–${g.minutes[1]} ${ui.minutesUnit} · ${ui.level}: ${ui.difficulty[g.difficulty]} · ${ui.age}: ${escHtml(g.age)}<br>${ui.need}: ${escHtml(g.deck)} (${deckCount(g, ui)})</p>
 <h2>${ui.goal}</h2><p>${escHtml(g.goal)}</p>
+${g.inShort ? `<h2>${ui.inShort}</h2><ol>${g.inShort.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>` : ""}
+${g.glossary ? `<h2>${ui.glossary}</h2><ul>${g.glossary.map(([w, m]) => `<li><b>${escHtml(w)}</b>: ${escHtml(m)}</li>`).join("")}</ul>` : ""}
 ${g.values ? `<h2>${ui.values}</h2><ul>${g.values.map(([c, v]) => `<li><bdi dir="ltr">${escHtml(cardText(c, ui))}</bdi>: ${escHtml(v)}</li>`).join("")}</ul>${g.valuesNote ? `<p>${escHtml(g.valuesNote)}</p>` : ""}` : ""}
 <h2>${ui.setup}</h2><ol>${g.setup.steps.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>${vis(g.setup.visual)}
 <h2>${ui.turn}</h2><ol>${g.turn.map(s => `<li>${escHtml(s.t)}${vis(s.visual)}</li>`).join("")}</ol>
+${g.combos ? `<h2>${ui.combos}</h2>${g.combos.note ? `<p>${escHtml(g.combos.note)}</p>` : ""}<ul>${g.combos.items.map(c => `<li><b>${escHtml(c.name)}</b> (${escHtml(c.points)}): <bdi dir="ltr">${escHtml(cardText(c.cards, ui))}</bdi>${c.text ? `. ${escHtml(c.text)}` : ""}</li>`).join("")}</ul>` : ""}
 <h2>${ui.scoring}</h2>${ul(g.scoring)}
 <h2>${ui.example}</h2>${g.example.map(s => `<p>${escHtml(s)}</p>`).join("")}
 <h2>${ui.tips}</h2>${ul(g.tips)}<h3>${ui.mistakes}</h3>${ul(g.mistakes)}
 ${g.drinking ? `<h2>${ui.drinking}</h2><p>${escHtml(ui.drinkingNote)}</p>${ul(g.drinking.rules)}` : ""}
 <h2>${ui.variants}</h2><ul>${g.variants.map(([n, t]) => `<li><b>${escHtml(n)}</b>: ${escHtml(t)}</li>`).join("")}</ul>
-<p><a href="./">${escHtml(ui.allGames)}</a> · <a href="../#${g.id}">${escHtml(ui.fullVersion)}</a></p></body></html>\n`));
+<p><a href="./">${escHtml(ui.allGames)}</a> · <a href="../#${g.id}">${escHtml(ui.fullVersion)}</a></p></body></html>\n`)));
   }
 }
 

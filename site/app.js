@@ -150,7 +150,7 @@ function renderGame(g) {
   const values = g.values ? `<section class="sec" id="values"><h2>${UI.values}</h2>
       <div class="values">${g.values.map(([c, v]) => `<span class="val">${cardsHTML(c)}<span>${esc(v)}</span></span>`).join("")}</div>
       ${g.valuesNote ? `<p>${esc(g.valuesNote)}</p>` : ""}</section>` : "";
-  const toc = Object.entries(UI.toc).filter(([k]) => k !== "drinking" || g.drinking).map(([k, l]) => `<a href="#${g.id}" data-to="${k}">${esc(l)}</a>`).join("");
+  const toc = Object.entries(UI.toc).filter(([k]) => (k !== "drinking" || g.drinking) && (k !== "combos" || g.combos)).map(([k, l]) => `<a href="#${g.id}" data-to="${k}">${esc(l)}</a>`).join("");
   app.innerHTML = `${bar()}
   <a class="back-link" href="#">${UI.allGames}</a>
   <header class="ghead">
@@ -167,6 +167,8 @@ function renderGame(g) {
   </div>
   <nav class="toc" aria-label="${UI.pageNav}">${toc}</nav>
   <div class="goal"><h2>${UI.goal}</h2><p>${esc(g.goal)}</p></div>
+  ${g.inShort ? `<section class="sec" id="inshort"><h2>${UI.inShort}</h2><ol class="short">${g.inShort.map(s => `<li>${esc(s)}</li>`).join("")}</ol></section>` : ""}
+  ${g.glossary ? `<section class="sec" id="glossary"><h2>${UI.glossary}</h2><dl class="gloss">${g.glossary.map(([w, m]) => `<div><dt>${esc(w)}</dt><dd>${esc(m)}</dd></div>`).join("")}</dl></section>` : ""}
   ${values}
   <section class="sec" id="setup"><h2>${UI.setup}</h2>
     <ol class="steps">${g.setup.steps.map(s => `<li><p>${esc(s)}</p></li>`).join("")}</ol>
@@ -175,6 +177,10 @@ function renderGame(g) {
   <section class="sec" id="turn"><h2>${UI.turn}</h2>
     <ol class="steps">${g.turn.map(s => `<li><p>${esc(s.t)}</p>${visualHTML(s.visual)}</li>`).join("")}</ol>
   </section>
+  ${g.combos ? `<section class="sec" id="combos"><h2>${UI.combos}</h2>
+    ${g.combos.note ? `<p>${esc(g.combos.note)}</p>` : ""}
+    <div class="combos">${g.combos.items.map(c => `<div class="combo"><div class="combo-head"><b>${esc(c.name)}</b><span class="pts">${esc(c.points)}</span></div>${cardsHTML(c.cards)}${c.text ? `<p>${esc(c.text)}</p>` : ""}</div>`).join("")}</div>
+  </section>` : ""}
   <section class="sec" id="scoring"><h2>${UI.scoring}</h2>${list(g.scoring)}</section>
   <section class="sec" id="example"><h2>${UI.example}</h2>
     <div class="story">${g.example.map(s => `<p>${esc(s)}</p>`).join("")}</div>
@@ -192,6 +198,7 @@ function renderGame(g) {
     </a>
   </section>
   ${tagsHTML(g)}
+  <p class="foot"><a href="${DATA.repo}/issues/new?template=unclear.yml&title=${encodeURIComponent(g.name + " (" + g.id + "): ")}" target="_blank" rel="noopener">${esc(UI.unclear)}</a></p>
   <a class="back-link" href="#">${UI.allGames}</a>`;
   const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
   app.querySelectorAll(".toc a").forEach(a => a.addEventListener("click", e => {
@@ -210,9 +217,31 @@ function bindMode() {
 }
 const applyMode = () => document.body.classList.toggle("text-mode", textMode);
 
+/* Card names inside Hebrew sentences ("Q♠", "10♥") need their own left-to-right island,
+   or the suit symbol jumps to the wrong side of the rank. */
+const CARD_IN_TEXT = /(?:10|[2-9AJQK])[♠♥♦♣]︎?/g;
+function isolateCards(root) {
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: n => n.parentElement.closest(".cards, bdi, script, style") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+  });
+  const nodes = [];
+  while (walk.nextNode()) { CARD_IN_TEXT.lastIndex = 0; if (CARD_IN_TEXT.test(walk.currentNode.data)) nodes.push(walk.currentNode); }
+  for (const n of nodes) {
+    CARD_IN_TEXT.lastIndex = 0;
+    const frag = document.createDocumentFragment(); let last = 0, m;
+    while ((m = CARD_IN_TEXT.exec(n.data))) {
+      frag.append(n.data.slice(last, m.index));
+      const b = document.createElement("bdi"); b.dir = "ltr"; b.textContent = m[0]; frag.append(b);
+      last = m.index + m[0].length;
+    }
+    frag.append(n.data.slice(last)); n.replaceWith(frag);
+  }
+}
+
 function route() {
   const g = GAMES.find(x => x.id === location.hash.slice(1));
   g ? renderGame(g) : renderList();
+  isolateCards(app);
   applyMode();
   window.scrollTo(0, 0);
 }

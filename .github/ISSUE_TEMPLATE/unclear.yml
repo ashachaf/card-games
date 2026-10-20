@@ -1,0 +1,26 @@
+name: משהו לא ברור / Something is unclear
+description: חלק מההסבר של משחק לא ברור, חסר או שגוי. Part of a game's explanation is unclear, missing or wrong.
+labels: ["clarity"]
+body:
+  - type: input
+    id: section
+    attributes:
+      label: באיזה חלק? / Which part?
+      placeholder: "למשל: מהלך תור, שלב 3 / e.g. Turn, step 3"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: מה לא היה ברור? / What was unclear?
+      description: מה ניסיתם לעשות, ואיפה נתקעתם. What you were trying to do, and where you got stuck.
+    validations:
+      required: true
+  - type: dropdown
+    id: played
+    attributes:
+      label: ניסיתם לשחק לפי העמוד? / Did you try to play from the page?
+      options:
+        - כן, ונתקענו / Yes, and we got stuck
+        - כן, אבל שיחקנו אחרת ממה שכתוב / Yes, but we played differently from the page
+        - רק קראתי / I only read it

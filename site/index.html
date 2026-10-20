@@ -177,6 +177,23 @@ p { margin: 0; }
 .story { display: flex; flex-direction: column; gap: .7rem; border-inline-start: 3px solid var(--accent); padding-inline-start: 1rem; }
 .drink-note { font-size: .9rem; color: var(--muted); background: var(--accent-soft); border-radius: 10px; padding: .5rem .8rem; }
 .text-mode .drink-note { background: none; padding: 0; }
+.short { margin: 0; padding-inline-start: 1.3rem; display: flex; flex-direction: column; gap: .4rem; font-size: 1.05rem; }
+.gloss { margin: 0; display: grid; gap: .5rem; }
+.gloss div { display: grid; grid-template-columns: minmax(5rem, 8rem) 1fr; gap: .2rem .8rem; }
+.gloss dt { font-weight: 700; }
+.gloss dd { margin: 0; min-width: 0; }
+@media (max-width: 30rem) { .gloss div { grid-template-columns: 1fr; } }
+.combos { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: .6rem; }
+.combo { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: .7rem .8rem; display: flex; flex-direction: column; gap: .45rem; min-width: 0; }
+.combo .cards { justify-content: flex-start; }
+.combo p { font-size: .9rem; color: var(--muted); }
+.combo-head { display: flex; justify-content: space-between; gap: .5rem; align-items: baseline; }
+.pts { font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.text-mode .combos { display: block; }
+.text-mode .combo { background: none; border: 0; padding: 0 0 .5rem; }
+.text-mode .gloss div { display: block; }
+.text-mode .gloss dt::after { content: ": "; }
+.text-mode .gloss dt, .text-mode .gloss dd { display: inline; }
 .variants { display: flex; flex-direction: column; gap: .6rem; }
 .variant b { display: block; }
 .video {

@@ -27,6 +27,18 @@ A drawing is a list of rows. Each row has `cards`, an optional `label` and an op
 
 Write cards as rank plus suit letter: `S` ♠, `H` ♥, `D` ♦, `C` ♣. For example `AS`, `10H`, `KD`. Use `X` for a face-down card, `JK` for a joker, `|` for a gap between two groups, and add `*` to highlight a card (`5H*`). Give each drawing a `caption` or `note` that says what it shows, because the text version reads those instead of the drawing.
 
+### Helping with hard games
+
+Three optional sections make a complicated game easier to follow, and the first is required for difficulty 3:
+
+- `inShort`: 2–4 plain sentences that explain the whole game before any detail.
+- `glossary`: `[word, meaning]` pairs for every term a first-timer won't know (trick, trump, meld).
+- `combos`: scoring combinations, each with `name`, `points`, `cards` and an optional `text`. Use it instead of listing combinations inside a turn step.
+
+### Review before you publish
+
+Read your page as someone who has never played: deal from `setup`, play two turns from `turn`, and stop wherever you'd have to guess. The repo's `review-card-game` skill does this check with Claude. Readers report unclear parts through the "משהו לא ברור?" link on each game page, which opens an issue labelled `clarity`.
+
 ### Drinking version (optional)
 
 A game can add a `drinking` section: 2–5 extra rules on top of the normal game, such as who drinks when they pick up the pile. Don't change the base rules for it, and don't add the `drinking` tag yourself, because the build adds it. Keep it moderate: sips, not shots, and the loser of the whole game finishes a drink at most. The page always shows a note that it's for adults and works with water or juice.
