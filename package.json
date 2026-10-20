@@ -1,0 +1,14 @@
+{
+  "name": "card-games",
+  "version": "0.1.0",
+  "private": true,
+  "description": "One Deck: card games for a regular deck of playing cards, explained for your first game.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "check": "node scripts/build.mjs --check",
+    "build": "node scripts/build.mjs",
+    "serve": "node scripts/build.mjs && python3 -m http.server 8765 --directory dist"
+  },
+  "license": "MIT"
+}

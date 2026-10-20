@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Card game",
+  "description": "One game in one language. scripts/build.mjs enforces the same rules, plus that every tag exists in i18n/<lang>.json.",
+  "type": "object",
+  "required": ["id", "name", "aliases", "hook", "players", "best", "minutes", "difficulty", "age", "deck", "deckType", "tags", "goal", "setup", "turn", "scoring", "example", "tips", "mistakes", "variants", "video"],
+  "$defs": {
+    "cards": {
+      "type": "string",
+      "description": "Space-separated cards: rank + suit (S ♠ H ♥ D ♦ C ♣), e.g. \"AS 10H KD\". X = face down, JK = joker, | = gap, trailing * = highlighted.",
+      "pattern": "^\\s*((X|JK|\\||(A|[2-9]|10|J|Q|K)[SHDC])\\*?)(\\s+(X|JK|\\||(A|[2-9]|10|J|Q|K)[SHDC])\\*?)*\\s*$"
+    },
+    "visual": {
+      "type": "object",
+      "required": ["rows"],
+      "properties": {
+        "rows": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "required": ["cards"],
+            "properties": { "label": { "type": "string" }, "cards": { "$ref": "#/$defs/cards" }, "note": { "type": "string" } }
+          }
+        },
+        "caption": { "type": "string", "description": "One sentence that says what the drawing shows. It is what the text version reads." }
+      }
+    },
+    "texts": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Same as the file name, and the same in every language." },
+    "name": { "type": "string" },
+    "aliases": { "type": "array", "items": { "type": "string" }, "description": "Other names people search for, including the English name." },
+    "hook": { "type": "string", "description": "One or two sentences: what the game is and why it's fun." },
+    "players": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 2, "maxItems": 2 },
+    "best": { "type": "string", "description": "Best player count, e.g. \"3–5\"." },
+    "minutes": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 2, "maxItems": 2 },
+    "difficulty": { "enum": [1, 2, 3] },
+    "age": { "type": "string" },
+    "deck": { "type": "string", "description": "What to bring, in words." },
+    "deckType": { "enum": ["standard", "jokers", "stripped", "double"], "description": "standard = 52 cards; jokers = 52 + jokers; stripped = some ranks removed; double = two standard decks." },
+    "tags": { "type": "array", "items": { "type": "string" }, "minItems": 2 },
+    "goal": { "type": "string" },
+    "values": { "type": "array", "items": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/cards" }, { "type": "string" }], "minItems": 2, "maxItems": 2 } },
+    "valuesNote": { "type": "string" },
+    "setup": { "type": "object", "required": ["steps"], "properties": { "steps": { "$ref": "#/$defs/texts", "minItems": 1 }, "visual": { "$ref": "#/$defs/visual" } } },
+    "turn": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["t"], "properties": { "t": { "type": "string" }, "visual": { "$ref": "#/$defs/visual" } } } },
+    "scoring": { "$ref": "#/$defs/texts", "minItems": 1 },
+    "example": { "$ref": "#/$defs/texts", "minItems": 2 },
+    "tips": { "$ref": "#/$defs/texts", "minItems": 2 },
+    "mistakes": { "$ref": "#/$defs/texts", "minItems": 1 },
+    "variants": { "type": "array", "items": { "type": "array", "prefixItems": [{ "type": "string" }, { "type": "string" }], "minItems": 2, "maxItems": 2 } },
+    "video": { "type": "string", "description": "A YouTube search phrase, not a link." }
+  }
+}
