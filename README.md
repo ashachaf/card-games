@@ -4,6 +4,10 @@
 
 משחקי קלפים עם קלפי משחק רגילים, מוסברים כך שאפשר לשחק כבר בפעם הראשונה: הכנה, תור אחרי תור, ניקוד, דוגמה לסבב, טיפים וגרסאות.
 
+**לאתר: [ashachaf.github.io/card-games](https://ashachaf.github.io/card-games/)** · [גרסת טקסט קלה](https://ashachaf.github.io/card-games/text/)
+
+<p align="center"><a href="https://ashachaf.github.io/card-games/"><img src="qr/site.png" alt="קוד QR לאתר משחקי קלפים" width="200"></a><br>סרקו כדי לפתוח את האתר</p>
+
 - כל משחק כאן משוחק עם קלפי משחק רגילים: חפיסה אחת או כמה חפיסות, לפעמים עם ג'וקרים או בלי חלק מהקלפים.
 - חיפוש וסינון לפי מספר שחקנים, מספר חפיסות, זמן, רמה וסוג.
 - גרסת טקסט קלה לכל משחק, לאינטרנט חלש.
@@ -15,6 +19,8 @@
 # Card Games
 
 Card games you can play with regular playing cards (one deck or several), explained so you can play on your first try. Hebrew first; more languages welcome.
+
+**Site: [ashachaf.github.io/card-games](https://ashachaf.github.io/card-games/)** · [Light text version](https://ashachaf.github.io/card-games/text/) · QR code: [PNG](qr/site.png), [SVG for print](qr/site.svg)
 
 ## How it works
 
