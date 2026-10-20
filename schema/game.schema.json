@@ -47,6 +47,7 @@
     "setup": { "type": "object", "required": ["steps"], "properties": { "steps": { "$ref": "#/$defs/texts", "minItems": 1 }, "visual": { "$ref": "#/$defs/visual" } } },
     "turn": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["t"], "properties": { "t": { "type": "string" }, "visual": { "$ref": "#/$defs/visual" } } } },
     "scoring": { "$ref": "#/$defs/texts", "minItems": 1 },
+    "scoringVisual": { "$ref": "#/$defs/visual", "description": "Optional drawing under the scoring, for a moment that is easier to see than to read (a Yaniv call, shooting the moon)." },
     "example": { "$ref": "#/$defs/texts", "minItems": 2 },
     "tips": { "$ref": "#/$defs/texts", "minItems": 2 },
     "mistakes": { "$ref": "#/$defs/texts", "minItems": 1 },
