@@ -1,20 +1,20 @@
 <div dir="rtl">
 
-# חפיסה אחת
+# משחקי קלפים
 
-משחקי קלפים עם חפיסה רגילה, מוסברים כך שאפשר לשחק כבר בפעם הראשונה: הכנה, תור אחרי תור, ניקוד, דוגמה לסבב, טיפים וגרסאות.
+משחקי קלפים עם קלפי משחק רגילים, מוסברים כך שאפשר לשחק כבר בפעם הראשונה: הכנה, תור אחרי תור, ניקוד, דוגמה לסבב, טיפים וגרסאות.
 
-- כל משחק כאן משוחק עם חפיסת קלפים רגילה (52 קלפים, לפעמים עם ג'וקרים או בלי חלק מהקלפים).
-- חיפוש וסינון לפי מספר שחקנים, זמן, רמה וסוג.
+- כל משחק כאן משוחק עם קלפי משחק רגילים: חפיסה אחת או כמה חפיסות, לפעמים עם ג'וקרים או בלי חלק מהקלפים.
+- חיפוש וסינון לפי מספר שחקנים, מספר חפיסות, זמן, רמה וסוג.
 - גרסת טקסט קלה לכל משחק, לאינטרנט חלש.
 - אחרי הכניסה הראשונה האתר עובד גם בלי אינטרנט.
 - הכל בקוד פתוח: אפשר להוסיף משחק או תרגום בקובץ אחד. ראו [CONTRIBUTING.md](CONTRIBUTING.md).
 
 </div>
 
-# One Deck
+# Card Games
 
-Card games you can play with a regular deck of playing cards, explained so you can play on your first try. Hebrew first; more languages welcome.
+Card games you can play with regular playing cards (one deck or several), explained so you can play on your first try. Hebrew first; more languages welcome.
 
 ## How it works
 

@@ -2,6 +2,7 @@
   "$schema": "../../schema/game.schema.json",
   "id": "shithead",
   "deckType": "standard",
+  "decks": 1,
   "name": "שיטהד",
   "aliases": [
     "Shithead",

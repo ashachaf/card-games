@@ -2,6 +2,7 @@
   "$schema": "../../schema/game.schema.json",
   "id": "yaniv",
   "deckType": "jokers",
+  "decks": 1,
   "name": "יניב",
   "aliases": [
     "Yaniv"

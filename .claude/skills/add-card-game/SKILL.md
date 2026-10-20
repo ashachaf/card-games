@@ -1,6 +1,6 @@
 ---
 name: add-card-game
-description: Add a new game (or several) to the One Deck card-game collection, or fix an existing one. Researches the rules, rejects games that need a special deck, writes games/<lang>/<id>.json in the fixed template in plain first-game language, and runs the check. Use when asked to "add <game>", "add games for 2 players", "fix the rules of <game>", or to translate a game.
+description: Add a new game (or several) to the Card Games collection, or fix an existing one. Researches the rules, rejects games that need a special deck, writes games/<lang>/<id>.json in the fixed template in plain first-game language, and runs the check. Use when asked to "add <game>", "add games for 2 players", "fix the rules of <game>", or to translate a game.
 ---
 
 # Add a card game
@@ -9,7 +9,7 @@ The collection is `games/<lang>/<id>.json`, one file per game per language. The 
 
 ## 1. Check the game belongs
 
-- It must be playable with **regular playing cards**: a 52-card deck, 52 + jokers, a standard deck with some ranks removed, or two standard decks. If it needs Uno, Taki, Tarot, an Italian or Spanish deck, a board or special pieces, stop and say so.
+- It must be playable with **regular playing cards**: one or more 52-card decks, with or without jokers, or with some ranks removed. If it needs Uno, Taki, Tarot, an Italian or Spanish deck, a board or special pieces, stop and say so.
 - It must not already exist: look in `games/he/` by `id`, and search `name` and `aliases`.
 
 ## 2. Get the rules right
@@ -24,7 +24,7 @@ Start from an existing file such as `games/he/yaniv.json`, and fill every field:
 
 - `id`: the English name, lowercase with dashes. `aliases`: the English name first, then other names people search for.
 - `hook`: one or two sentences. `goal`: what wins or loses, in one or two sentences.
-- `deck` in words, and `deckType` (`standard`, `jokers`, `stripped`, `double`).
+- `deck` in words, `deckType` (`standard`, `jokers`, `stripped`) describing each deck, and `decks`: how many decks the base game needs (1, 2, 3…).
 - `values`: card ranks or points, as `[cards, meaning]` pairs, with `valuesNote` for trump or special cards.
 - `setup.steps` plus one `setup.visual` showing the deal. `turn`: one action per step, with a `visual` wherever cards make the rule clearer (allowed or not allowed, a combination, what beats what).
 - `scoring`: how a round ends and how the game ends.

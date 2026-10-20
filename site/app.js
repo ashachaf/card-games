@@ -42,13 +42,14 @@ function norm(s) {
 const HAY = new Map(GAMES.map(g => [g.id, norm([g.name, ...g.aliases, g.hook, g.deck, ...g.tags.map(t => TAGS[t])].join(" "))]));
 
 /* ---------- state ---------- */
-const state = { q: "", players: null, time: null, diff: null, tags: new Set() };
+const state = { q: "", players: null, decks: null, time: null, diff: null, tags: new Set() };
 let textMode = false;
 try { textMode = localStorage.getItem("textMode") === "1"; } catch (e) {}
 
 const TIMES = { s: g => g.minutes[0] <= 15, m: g => g.minutes[0] <= 30 && g.minutes[1] >= 15, l: g => g.minutes[1] > 30 };
 const PLAYER_OPTS = [2, 3, 4, 5, 6];
-const anyFilter = () => Boolean(state.q || state.players || state.time || state.diff || state.tags.size);
+const anyFilter = () => Boolean(state.q || state.players || state.decks || state.time || state.diff || state.tags.size);
+const deckCount = g => g.decks === 1 ? UI.deckCount["1"] : fill(UI.deckCount.n, { n: g.decks });
 
 function matches(g) {
   if (state.q) {
@@ -56,6 +57,7 @@ function matches(g) {
     if (!norm(state.q).split(/\s+/).filter(Boolean).every(w => h.includes(w))) return false;
   }
   if (state.players && !(g.players[0] <= state.players && (g.players[1] >= state.players))) return false;
+  if (state.decks && !(state.decks === 3 ? g.decks >= 3 : g.decks === state.decks)) return false;
   if (state.time && !TIMES[state.time](g)) return false;
   if (state.diff && g.difficulty !== state.diff) return false;
   for (const t of state.tags) if (!g.tags.includes(t)) return false;
@@ -84,7 +86,7 @@ function gameCard(g) {
   return `<a class="gcard" href="#${g.id}">
     <div class="gtop"><div><div class="gname">${esc(g.name)}</div><div class="galias">${esc(g.aliases[0] || "")}</div></div></div>
     <p class="ghook">${esc(g.hook)}</p>
-    <div class="meta"><span>${UI.players} <b>${players(g)}</b></span><span>${UI.time} <b>${minutes(g)}</b></span><span>${UI.level} <b>${UI.difficulty[g.difficulty]}</b></span></div>
+    <div class="meta"><span>${UI.players} <b>${players(g)}</b></span><span>${UI.decks} <b>${g.decks}</b></span><span>${UI.time} <b>${minutes(g)}</b></span><span>${UI.level} <b>${UI.difficulty[g.difficulty]}</b></span></div>
     ${tagsHTML(g)}
   </a>`;
 }
@@ -96,6 +98,7 @@ function renderList() {
   <input class="search" id="q" type="search" placeholder="${esc(UI.searchPlaceholder)}" value="${esc(state.q)}" aria-label="${esc(UI.searchLabel)}">
   <div class="filters">
     <div class="frow"><span class="flabel">${UI.players}</span>${PLAYER_OPTS.map(n => chip("players", n, n === 6 ? "6+" : n, state.players === n)).join("")}</div>
+    <div class="frow"><span class="flabel">${UI.decks}</span>${Object.entries(UI.deckOpts).map(([k, l]) => chip("decks", k, l, state.decks === Number(k))).join("")}</div>
     <div class="frow"><span class="flabel">${UI.time}</span>${Object.keys(TIMES).map(k => chip("time", k, UI.times[k], state.time === k)).join("")}</div>
     <div class="frow"><span class="flabel">${UI.level}</span>${[1, 2, 3].map(d => chip("diff", d, UI.difficulty[d], state.diff === d)).join("")}</div>
     <div class="frow"><span class="flabel">${UI.type}</span>${usedTags.map(t => chip("tags", t, TAGS[t], state.tags.has(t))).join("")}</div>
@@ -109,7 +112,7 @@ function renderList() {
   q.addEventListener("input", () => { state.q = q.value; renderResults(); });
   app.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
     const g = b.dataset.g, raw = b.dataset.v;
-    const v = g === "players" || g === "diff" ? Number(raw) : raw;
+    const v = g === "players" || g === "diff" || g === "decks" ? Number(raw) : raw;
     if (g === "tags") { state.tags.has(v) ? state.tags.delete(v) : state.tags.add(v); b.setAttribute("aria-pressed", state.tags.has(v)); }
     else {
       state[g] = state[g] === v ? null : v;
@@ -127,7 +130,7 @@ function renderResults() {
   el.innerHTML = `<div class="count"><span>${count}</span>${anyFilter() ? `<button class="clear" id="clear" type="button">${UI.clear}</button>` : ""}</div>
   ${list.length ? `<div class="grid">${list.map(gameCard).join("")}</div>` : `<div class="empty">${esc(UI.empty)}</div>`}`;
   const c = document.getElementById("clear");
-  if (c) c.addEventListener("click", () => { state.q = ""; state.players = state.time = state.diff = null; state.tags.clear(); renderList(); });
+  if (c) c.addEventListener("click", () => { state.q = ""; state.players = state.decks = state.time = state.diff = null; state.tags.clear(); renderList(); });
 }
 
 const list = items => `<ul class="bul">${items.map(s => `<li>${esc(s)}</li>`).join("")}</ul>`;
@@ -149,7 +152,7 @@ function renderGame(g) {
     <div class="fact"><span>${UI.time}</span><b>${minutes(g)}</b></div>
     <div class="fact"><span>${UI.level}</span><b>${UI.difficulty[g.difficulty]}</b></div>
     <div class="fact"><span>${UI.age}</span><b>${esc(g.age)}</b></div>
-    <div class="fact wide"><span>${UI.need}</span><b>${esc(g.deck)}</b></div>
+    <div class="fact wide"><span>${UI.need}</span><b>${esc(deckCount(g))}: ${esc(g.deck)}</b></div>
   </div>
   <nav class="toc" aria-label="${UI.pageNav}">${toc}</nav>
   <div class="goal"><h2>${UI.goal}</h2><p>${esc(g.goal)}</p></div>

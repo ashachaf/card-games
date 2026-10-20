@@ -7,7 +7,7 @@ Full legal text: https://creativecommons.org/licenses/by-sa/4.0/legalcode
 
 You may share and adapt them, including commercially, as long as you:
 
-- **Credit** "One Deck (חפיסה אחת) contributors" and link to https://github.com/ashachaf/card-games
+- **Credit** "Card Games (משחקי קלפים) contributors" and link to https://github.com/ashachaf/card-games
 - **Share alike:** release your adapted texts under the same license.
 
 The code in `site/`, `scripts/` and `schema/` is licensed separately under MIT (see `LICENSE`).

@@ -11,7 +11,7 @@ const REPO = "https://github.com/ashachaf/card-games";
 const DEFAULT_LANG = "he";
 const CHECK_ONLY = process.argv.includes("--check");
 
-const DECK_TYPES = ["standard", "jokers", "stripped", "double"];
+const DECK_TYPES = ["standard", "jokers", "stripped"];
 const CARD_TOKEN = /^(X|JK|\||(A|[2-9]|10|J|Q|K)[SHDC])\*?$/;
 const read = p => JSON.parse(fs.readFileSync(p, "utf8"));
 
@@ -36,6 +36,7 @@ function validate(g, file, tags) {
   ["name", "hook", "best", "age", "deck", "goal", "video"].forEach(str);
   need(Array.isArray(g.aliases), `"aliases" must be a list`);
   need(DECK_TYPES.includes(g.deckType), `"deckType" must be one of ${DECK_TYPES.join(", ")}: every game uses regular playing cards`);
+  need(Number.isInteger(g.decks) && g.decks >= 1 && g.decks <= 6, `"decks" must be a whole number from 1 to 6`);
   need(Array.isArray(g.players) && g.players.length === 2 && g.players.every(Number.isInteger) && g.players[0] >= 1 && g.players[0] <= g.players[1], `"players" must be [min, max]`);
   need(Array.isArray(g.minutes) && g.minutes.length === 2 && g.minutes.every(Number.isInteger) && g.minutes[0] <= g.minutes[1], `"minutes" must be [min, max]`);
   need([1, 2, 3].includes(g.difficulty), `"difficulty" must be 1, 2 or 3`);
@@ -139,7 +140,7 @@ ${body}
     const players = g.players[0] === g.players[1] ? g.players[0] : `${g.players[0]}–${g.players[1]}`;
     outputs.push(write(`${prefix}text/${g.id}.html`, `${tHead(g.name)}<p><a href="./">${escHtml(ui.allGames)}</a></p>
 <h1>${escHtml(g.name)}</h1><p>${escHtml(g.hook)}</p>
-<p>${ui.players}: ${players} (${ui.best}: ${escHtml(g.best)}) · ${ui.time}: ${g.minutes[0]}–${g.minutes[1]} ${ui.minutesUnit} · ${ui.level}: ${ui.difficulty[g.difficulty]} · ${ui.age}: ${escHtml(g.age)}<br>${ui.need}: ${escHtml(g.deck)}</p>
+<p>${ui.players}: ${players} (${ui.best}: ${escHtml(g.best)}) · ${ui.time}: ${g.minutes[0]}–${g.minutes[1]} ${ui.minutesUnit} · ${ui.level}: ${ui.difficulty[g.difficulty]} · ${ui.age}: ${escHtml(g.age)}<br>${ui.need}: ${escHtml(g.deck)} (${g.decks === 1 ? ui.deckCount["1"] : ui.deckCount.n.replace("{n}", g.decks)})</p>
 <h2>${ui.goal}</h2><p>${escHtml(g.goal)}</p>
 ${g.values ? `<h2>${ui.values}</h2><ul>${g.values.map(([c, v]) => `<li><bdi dir="ltr">${escHtml(cardText(c, ui))}</bdi>: ${escHtml(v)}</li>`).join("")}</ul>${g.valuesNote ? `<p>${escHtml(g.valuesNote)}</p>` : ""}` : ""}
 <h2>${ui.setup}</h2><ol>${g.setup.steps.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>${vis(g.setup.visual)}
@@ -168,7 +169,7 @@ write("manifest.webmanifest", JSON.stringify({
 // Service worker: caches every page on first visit, so the site works offline.
 const files = outputs.map(p => "./" + path.relative(DIST, p).replace(/index\.html$/, "")).concat(["./manifest.webmanifest"]);
 const hash = crypto.createHash("sha256").update(outputs.map(p => fs.readFileSync(p)).join("")).digest("hex").slice(0, 10);
-write("sw.js", `const CACHE = "cards-${hash}";
+write("sw.js", `const CACHE = "card-games-${hash}";
 const FILES = ${JSON.stringify(files)};
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));

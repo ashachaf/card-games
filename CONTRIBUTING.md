@@ -4,7 +4,7 @@ Thanks for helping. Most contributions are a new game, a fix to a rule, or a tra
 
 ## The rules of the collection
 
-1. **Regular playing cards only.** A standard 52-card deck, with or without jokers, with some ranks removed (like Durak's 36 cards), or two standard decks. No Uno, no Taki, no special decks. Set `deckType` to match.
+1. **Regular playing cards only.** One or more standard 52-card decks, with or without jokers, or with some ranks removed (like Durak's 36 cards). No Uno, no Taki, no special decks. Set `deckType` to match, and `decks` to how many decks the base game needs.
 2. **Write it yourself.** Explain the game in your own words. Don't copy or translate text from other sites or books. Rules themselves can't be owned, but their wording can. Using other sources to check that the rules are right is fine.
 3. **Written for a first game.** Short sentences, one action per step. Someone who has never played should be able to start after reading the page once.
 4. **One base version.** Many games have no single official rulebook. Pick the most common version as the base and put the rest under `variants`.

@@ -2,6 +2,7 @@
   "$schema": "../../schema/game.schema.json",
   "id": "war",
   "deckType": "standard",
+  "decks": 1,
   "name": "מלחמה",
   "aliases": [
     "War"

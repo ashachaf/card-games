@@ -2,7 +2,7 @@
   "name": "card-games",
   "version": "0.1.0",
   "private": true,
-  "description": "One Deck: card games for a regular deck of playing cards, explained for your first game.",
+  "description": "Card games for regular playing cards, explained for your first game.",
   "type": "module",
   "engines": { "node": ">=18" },
   "scripts": {

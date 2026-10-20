@@ -2,6 +2,7 @@
   "$schema": "../../schema/game.schema.json",
   "id": "durak",
   "deckType": "stripped",
+  "decks": 1,
   "name": "דוראק",
   "aliases": [
     "Durak",

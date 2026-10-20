@@ -3,7 +3,7 @@
   "title": "Card game",
   "description": "One game in one language. scripts/build.mjs enforces the same rules, plus that every tag exists in i18n/<lang>.json.",
   "type": "object",
-  "required": ["id", "name", "aliases", "hook", "players", "best", "minutes", "difficulty", "age", "deck", "deckType", "tags", "goal", "setup", "turn", "scoring", "example", "tips", "mistakes", "variants", "video"],
+  "required": ["id", "name", "aliases", "hook", "players", "best", "minutes", "difficulty", "age", "deck", "deckType", "decks", "tags", "goal", "setup", "turn", "scoring", "example", "tips", "mistakes", "variants", "video"],
   "$defs": {
     "cards": {
       "type": "string",
@@ -38,7 +38,8 @@
     "difficulty": { "enum": [1, 2, 3] },
     "age": { "type": "string" },
     "deck": { "type": "string", "description": "What to bring, in words." },
-    "deckType": { "enum": ["standard", "jokers", "stripped", "double"], "description": "standard = 52 cards; jokers = 52 + jokers; stripped = some ranks removed; double = two standard decks." },
+    "deckType": { "enum": ["standard", "jokers", "stripped"], "description": "What each deck looks like: standard = 52 cards; jokers = 52 + jokers; stripped = some ranks removed." },
+    "decks": { "type": "integer", "minimum": 1, "maximum": 6, "description": "How many decks the base game needs." },
     "tags": { "type": "array", "items": { "type": "string" }, "minItems": 2 },
     "goal": { "type": "string" },
     "values": { "type": "array", "items": { "type": "array", "prefixItems": [{ "$ref": "#/$defs/cards" }, { "type": "string" }], "minItems": 2, "maxItems": 2 } },
