@@ -90,7 +90,7 @@ for (const lang of langs) {
     if (g.drinking && !g.tags.includes("drinking")) g.tags.push("drinking");
     games.push(g);
   }
-  games.sort((a, b) => a.name.localeCompare(b.name, lang));
+  games.sort((a, b) => a.difficulty - b.difficulty || a.name.localeCompare(b.name, lang)); // easy first, then by name
   bundles[lang] = { ...i18n, games };
 }
 if (errors.length) {
