@@ -33,6 +33,7 @@ Start from an existing file such as `games/he/yaniv.json`, and fill every field:
 - `variants`: `[name, text]` pairs for common house rules.
 - `inShort` (required for difficulty 3, recommended when the turn has more than 6 steps), `glossary` for terms of art, and `combos` for scoring combinations. Never pack a list of combinations into one turn step.
 - `drinking` (optional): `{ "rules": [...] }`, 2–5 extra rules layered on the normal game, moderate (sips; at most the overall loser finishes a drink). Never add the `drinking` tag by hand; the build adds it.
+- `drinkingGame: true` (with `age: "18+"`) for a game whose core is drinking, such as Kings Cup. Sips only, any single penalty capped at about 5.
 - `video`: a YouTube search phrase (Hebrew if videos exist in Hebrew, otherwise English).
 - `tags`: 2–6 tags from `i18n/he.json` only.
 

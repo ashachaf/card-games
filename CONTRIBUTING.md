@@ -43,6 +43,10 @@ Read your page as someone who has never played: deal from `setup`, play two turn
 
 A game can add a `drinking` section: 2–5 extra rules on top of the normal game, such as who drinks when they pick up the pile. Don't change the base rules for it, and don't add the `drinking` tag yourself, because the build adds it. Keep it moderate: sips, not shots, and the loser of the whole game finishes a drink at most. The page always shows a note that it's for adults and works with water or juice.
 
+### Drinking games
+
+A game that is a drinking game at its core (Kings Cup, Ride the Bus) sets `"drinkingGame": true` and `"age": "18+"`. The page then opens with the adults-only note, and the build adds the `drinking` tag. Keep amounts in sips and cap any single penalty at about 5.
+
 ### Writing style
 
 - Use plain words. Explain any term of art the first time it appears, like "trump" or "trick".

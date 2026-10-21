@@ -55,6 +55,7 @@
     "inShort": { "$ref": "#/$defs/texts", "minItems": 2, "maxItems": 4, "description": "2–4 plain sentences that explain the whole game before any detail. Required when difficulty is 3." },
     "glossary": { "type": "array", "description": "Terms a first-timer won't know, as [word, meaning].", "items": { "type": "array", "prefixItems": [{ "type": "string" }, { "type": "string" }], "minItems": 2, "maxItems": 2 } },
     "combos": { "type": "object", "required": ["items"], "description": "Scoring combinations, each with a drawing.", "properties": { "note": { "type": "string" }, "items": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["name", "points", "cards"], "properties": { "name": { "type": "string" }, "points": { "type": "string" }, "cards": { "$ref": "#/$defs/cards" }, "text": { "type": "string" } } } } } },
+    "drinkingGame": { "const": true, "description": "The game is a drinking game at its core (Kings Cup). Shows the 18+ note at the top and adds the \"drinking\" tag. Needs age 18+." },
     "drinking": { "type": "object", "required": ["rules"], "description": "Optional drinking version: extra rules on top of the normal game. The build adds the \"drinking\" tag automatically.", "properties": { "rules": { "$ref": "#/$defs/texts", "minItems": 2 } } },
     "video": { "type": "string", "description": "A YouTube search phrase, not a link." }
   }

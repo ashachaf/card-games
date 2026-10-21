@@ -176,6 +176,9 @@ p { margin: 0; }
 .values { display: flex; flex-wrap: wrap; gap: .5rem; }
 .val { display: flex; align-items: center; gap: .45rem; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: .35rem .6rem .35rem .8rem; font-variant-numeric: tabular-nums; }
 .val .cards { flex-wrap: nowrap; }
+.values.long { display: grid; gap: .4rem; }
+.values.long .val { align-items: flex-start; }
+.values.long .val .cards { padding-top: .1rem; }
 .val .card { width: 1.7rem; font-size: .62rem; }
 .val .card .s { font-size: .85rem; }
 .story { display: flex; flex-direction: column; gap: .7rem; border-inline-start: 3px solid var(--accent); padding-inline-start: 1rem; }

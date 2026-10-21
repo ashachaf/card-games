@@ -135,7 +135,7 @@ const list = items => `<ul class="bul">${items.map(s => `<li>${esc(s)}</li>`).jo
 
 function gameHTML(g) {
   const values = g.values ? `<section class="sec" id="values"><h2>${UI.values}</h2>
-      <div class="values">${g.values.map(([c, v]) => `<span class="val">${cardsHTML(c)}<span>${esc(v)}</span></span>`).join("")}</div>
+      <div class="values${g.values.some(([, v]) => v.length > 24) ? " long" : ""}">${g.values.map(([c, v]) => `<span class="val">${cardsHTML(c)}<span>${esc(v)}</span></span>`).join("")}</div>
       ${g.valuesNote ? `<p>${esc(g.valuesNote)}</p>` : ""}</section>` : "";
   const toc = Object.entries(UI.toc).filter(([k]) => (k !== "drinking" || g.drinking) && (k !== "combos" || g.combos)).map(([k, l]) => `<a href="#${k}" data-to="${k}">${esc(l)}</a>`).join("");
   return `${bar()}
@@ -144,6 +144,7 @@ function gameHTML(g) {
     <h1>${esc(g.name)}</h1>
     <div class="galias">${g.aliases.map(esc).join(" · ")}</div>
     <p class="ghook">${esc(g.hook)}</p>
+    ${g.drinkingGame ? `<p class="drink-note">${esc(UI.drinkingGameNote)}</p>` : ""}
   </header>
   <div class="facts">
     <div class="fact"><span>${UI.players}</span><b>${players(g)} (${UI.best}: ${esc(g.best)})</b></div>

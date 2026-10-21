@@ -59,10 +59,12 @@ function validate(g, file, tags) {
   strList(g.example, "example", 2);
   strList(g.tips, "tips", 2);
   strList(g.mistakes, "mistakes");
+  if (g.drinkingGame !== undefined) need(g.drinkingGame === true, `"drinkingGame" is either true or left out`);
+  if (g.drinkingGame) need(/18/.test(g.age || ""), `a drinking game needs "age": "18+"`);
   if (g.drinking !== undefined) {
     need(g.drinking && typeof g.drinking === "object", `"drinking" must be an object with "rules"`);
     if (g.drinking) strList(g.drinking.rules, "drinking.rules", 2);
-    need(!(g.tags || []).includes("drinking"), `don't add the "drinking" tag by hand: it is added when the game has a "drinking" section`);
+    need(!(g.tags || []).includes("drinking"), `don't add the "drinking" tag by hand: it is added when the game has a "drinking" section or "drinkingGame": true`);
   }
   if (g.inShort !== undefined) strList(g.inShort, "inShort", 2);
   if (g.glossary !== undefined) need(Array.isArray(g.glossary) && g.glossary.every(x => Array.isArray(x) && x.length === 2), `"glossary" must be a list of [word, meaning]`);
@@ -90,7 +92,7 @@ for (const lang of langs) {
     try { g = read(path.join(ROOT, rel)); } catch (e) { errors.push(`${rel}: not valid JSON (${e.message})`); continue; }
     errors.push(...validate(g, rel, i18n.tags));
     delete g.$schema;
-    if (g.drinking && !g.tags.includes("drinking")) g.tags.push("drinking");
+    if ((g.drinking || g.drinkingGame) && !g.tags.includes("drinking")) g.tags.push("drinking");
     games.push(g);
   }
   games.sort((a, b) => a.difficulty - b.difficulty || a.name.localeCompare(b.name, lang)); // easy first, then by name
@@ -276,7 +278,7 @@ for (const [lang, b] of Object.entries(bundles)) {
   for (const g of b.games) {
     const players = g.players[0] === g.players[1] ? g.players[0] : `${g.players[0]}–${g.players[1]}`;
     outputs.push(write(`${prefix}text/${g.id}.html`, isolateCards(`${tHead(g.name, urlOf(lang, `games/${g.id}/`))}<p><a href="./">${escHtml(ui.allGames)}</a></p>
-<h1>${escHtml(g.name)}</h1><p>${escHtml(g.hook)}</p>
+<h1>${escHtml(g.name)}</h1><p>${escHtml(g.hook)}</p>${g.drinkingGame ? `<p>${escHtml(ui.drinkingGameNote)}</p>` : ""}
 <p>${ui.players}: ${players} (${ui.best}: ${escHtml(g.best)}) · ${ui.time}: ${g.minutes[0]}–${g.minutes[1]} ${ui.minutesUnit} · ${ui.level}: ${ui.difficulty[g.difficulty]} · ${ui.age}: ${escHtml(g.age)}<br>${ui.need}: ${escHtml(g.deck)} (${deckCount(g, ui)})</p>
 <h2>${ui.goal}</h2><p>${escHtml(g.goal)}</p>
 ${g.inShort ? `<h2>${ui.inShort}</h2><ol>${g.inShort.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>` : ""}
