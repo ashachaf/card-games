@@ -183,7 +183,7 @@ function htmlPage({ lang, ui, base, title, description, seo, data, prerendered, 
   const head = template
     .replace("__TITLE__", escHtml(title))
     .replace("__DESCRIPTION__", escHtml(description))
-    .replace("__BASE__", base)
+    .replaceAll("__BASE__", base)
     .replace("__SEO__", seo);
   return `<!doctype html>
 <html lang="${lang}" dir="${ui.dir}">
@@ -269,7 +269,7 @@ for (const [lang, b] of Object.entries(bundles)) {
 
   // The text version: one tiny page per game, no scripts, no fonts, no images.
   // Its canonical is the full game page, so search engines don't count it twice.
-  const tHead = (title, canonical) => `<!doctype html><html lang="${lang}" dir="${ui.dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(title)}</title><link rel="canonical" href="${canonical}"><style>body{font:17px/1.6 Arial,sans-serif;max-width:40rem;margin:0 auto;padding:1rem}</style></head><body>`;
+  const tHead = (title, canonical) => `<!doctype html><html lang="${lang}" dir="${ui.dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escHtml(title)}</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="canonical" href="${canonical}"><style>body{font:17px/1.6 Arial,sans-serif;max-width:40rem;margin:0 auto;padding:1rem}</style></head><body>`;
   const ul = items => `<ul>${items.map(s => `<li>${escHtml(s)}</li>`).join("")}</ul>`;
   const vis = v => v ? `<ul>${v.rows.map(r => `<li>${r.label ? escHtml(r.label) + ": " : ""}<bdi dir="ltr">${escHtml(cardText(r.cards, ui))}</bdi>${r.note ? ` (${escHtml(r.note)})` : ""}</li>`).join("")}</ul>${v.caption ? `<p>${escHtml(v.caption)}</p>` : ""}` : "";
   outputs.push(write(`${prefix}text/index.html`, `${tHead(ui.siteName, homeUrl)}<h1>${escHtml(ui.siteName)}</h1><p>${escHtml(ui.title)}</p><ul>${b.games.map(g => `<li><a href="${g.id}.html">${escHtml(g.name)}</a>: ${escHtml(g.hook)}</li>`).join("")}</ul><p><a href="../">${escHtml(ui.fullVersion)}</a></p></body></html>\n`));
@@ -298,7 +298,7 @@ ${g.drinking ? `<h2>${ui.drinking}</h2><p>${escHtml(ui.drinkingNote)}</p>${ul(g.
 {
   const b = bundles[DEFAULT_LANG];
   const v = views({ ...b, hashRoutes: true });
-  const head = template.replace("__TITLE__", escHtml(b.ui.siteName)).replace("__DESCRIPTION__", escHtml(b.ui.intro)).replace("__BASE__", "").replace("__SEO__", "").replace(/<link rel="manifest"[^>]*>\n?/, "");
+  const head = template.replace("__TITLE__", escHtml(b.ui.siteName)).replace("__DESCRIPTION__", escHtml(b.ui.intro)).replaceAll("__BASE__", "").replace("__SEO__", "").replace(/<link rel="(manifest|icon|apple-touch-icon)"[^>]*>\n?/g, "");
   write("preview.html", `${head}
 <div class="app" id="app" dir="${b.ui.dir}" lang="${DEFAULT_LANG}">${v.isolateCards(v.listHTML())}</div>
 <script>const DATA = ${json({ ...b, repo: REPO, hashRoutes: true, offline: false })};</script>
@@ -313,7 +313,7 @@ write("manifest.webmanifest", JSON.stringify({
   icons: [{ src: "/icon.png", sizes: "512x512", type: "image/png" }]
 }, null, 2));
 fs.copyFileSync(path.join(ROOT, "site", "og.png"), path.join(DIST, "og.png"));
-fs.copyFileSync(path.join(ROOT, "site", "icon.png"), path.join(DIST, "icon.png"));
+for (const f of ["icon.png", "favicon.svg", "favicon-32.png", "apple-touch-icon.png"]) fs.copyFileSync(path.join(ROOT, "site", f), path.join(DIST, f));
 
 // ---------- SEO files ----------
 write("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>
@@ -326,11 +326,11 @@ ${sitemap.map(s => `  <url>
 `);
 write("robots.txt", `User-agent: *\nAllow: /\nDisallow: /preview.html\n\nSitemap: ${SITE}/sitemap.xml\n`);
 write("llms.txt", llms.join("\n").trim() + "\n");
-write("404.html", `<!doctype html><html lang="${DEFAULT_LANG}" dir="${ui0.dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><title>${escHtml(ui0.notFound)}</title><style>body{font:18px/1.6 Arial,sans-serif;max-width:32rem;margin:0 auto;padding:3rem 1rem;text-align:center}</style></head><body><h1>${escHtml(ui0.notFound)}</h1><p><a href="/">${escHtml(ui0.allGames)}</a></p></body></html>\n`);
+write("404.html", `<!doctype html><html lang="${DEFAULT_LANG}" dir="${ui0.dir}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex"><link rel="icon" href="/favicon.svg" type="image/svg+xml"><title>${escHtml(ui0.notFound)}</title><style>body{font:18px/1.6 Arial,sans-serif;max-width:32rem;margin:0 auto;padding:3rem 1rem;text-align:center}</style></head><body><h1>${escHtml(ui0.notFound)}</h1><p><a href="/">${escHtml(ui0.allGames)}</a></p></body></html>\n`);
 write("CNAME", new URL(SITE).host + "\n");
 
 // Service worker: caches every page on first visit, so the site works offline.
-const files = outputs.map(p => "/" + path.relative(DIST, p).replace(/index\.html$/, "")).concat(["/manifest.webmanifest", "/icon.png"]);
+const files = outputs.map(p => "/" + path.relative(DIST, p).replace(/index\.html$/, "")).concat(["/manifest.webmanifest", "/icon.png", "/favicon.svg", "/favicon-32.png", "/apple-touch-icon.png"]);
 const hash = crypto.createHash("sha256").update(outputs.map(p => fs.readFileSync(p)).join("")).digest("hex").slice(0, 10);
 write("sw.js", `const CACHE = "card-games-${hash}";
 const FILES = ${JSON.stringify(files)};

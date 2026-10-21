@@ -41,7 +41,7 @@ scripts/build.mjs        checks every game, then builds dist/
 - `games/<id>/`: a pre-rendered page per game with its own title, description, canonical link, Open Graph preview and schema.org data (`Game`, `HowTo`, `BreadcrumbList`).
 - `sitemap.xml` (dated from each game's last commit), `robots.txt`, `llms.txt`, `404.html`, the share image `og.png` and the app icon.
 
-All of it is generated from `games/`, so a new game gets its page and its sitemap entry on the next push. To redraw `site/og.png` and `site/icon.png`, run `python3 scripts/make-images.py`.
+All of it is generated from `games/`, so a new game gets its page and its sitemap entry on the next push. To redraw the share image and the ace-of-spades icons (`site/og.png`, `icon.png`, `apple-touch-icon.png`, `favicon-32.png`), run `python3 scripts/make-images.py`. The browser-tab icon is `site/favicon.svg`.
 
 Other languages build to `dist/<lang>/`. There are no dependencies. You need only Node 18+.
 

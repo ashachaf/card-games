@@ -42,9 +42,20 @@ d.text((1110, 335), "איך משחקים, צעד אחר צעד"[::-1], font=heb(
 d.text((1110, 470), "card-games.win", font=bold(48), fill=BLUE, anchor="rm")
 img.convert("RGB").save(f"{OUT}/og.png", optimize=True)
 
-# App icon, 512x512.
-ico = backdrop((512, 512))
-card(ico, 200, 270, 190, "A", "♠", 10)
-card(ico, 312, 250, 190, "K", "♥", -8)
-ico.convert("RGB").save(f"{OUT}/icon.png", optimize=True)
+# Ace of spades: the app icon (512), the iPhone home-screen icon (180) and the browser-tab
+# fallback (32). The tab icon itself is site/favicon.svg, the same card drawn as a vector.
+def ace(size):
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    s = size / 64
+    d.rounded_rectangle((9 * s, 2 * s, 55 * s, 62 * s), radius=7 * s, fill=FACE, outline=BLUE, width=max(1, round(3 * s)))
+    d.text((14.5 * s, 7 * s), "A", font=bold(round(15 * s)), fill=INK)
+    d.text((32 * s, 37 * s), "\u2660", font=uni(round(34 * s)), fill=INK, anchor="mm")
+    return img
+
+ace(512).save(f"{OUT}/icon.png", optimize=True)
+touch = Image.new("RGBA", (180, 180), BLUE)  # iOS fills transparency with black, so give it a ground
+touch.alpha_composite(ace(150), (15, 15))
+touch.convert("RGB").save(f"{OUT}/apple-touch-icon.png", optimize=True)
+ace(32).save(f"{OUT}/favicon-32.png", optimize=True)
 print("ok")
