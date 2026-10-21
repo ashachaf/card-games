@@ -165,7 +165,7 @@ function gameHTML(g) {
   <section class="sec" id="turn"><h2>${UI.turn}</h2>
     <ol class="steps">${g.turn.map(s => `<li><p>${esc(s.t)}</p>${visualHTML(s.visual)}</li>`).join("")}</ol>
   </section>
-  ${g.combos ? `<section class="sec" id="combos"><h2>${UI.combos}</h2>
+  ${g.combos ? `<section class="sec" id="combos"><h2>${esc(g.combos.title || UI.combos)}</h2>
     ${g.combos.note ? `<p>${esc(g.combos.note)}</p>` : ""}
     <div class="combos">${g.combos.items.map(c => `<div class="combo"><div class="combo-head"><b>${esc(c.name)}</b><span class="pts">${esc(c.points)}</span></div>${cardsHTML(c.cards)}${c.text ? `<p>${esc(c.text)}</p>` : ""}</div>`).join("")}</div>
   </section>` : ""}

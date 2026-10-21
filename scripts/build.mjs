@@ -290,7 +290,7 @@ ${g.glossary ? `<h2>${ui.glossary}</h2><ul>${g.glossary.map(([w, m]) => `<li><b>
 ${g.values ? `<h2>${ui.values}</h2><ul>${g.values.map(([c, v]) => `<li><bdi dir="ltr">${escHtml(cardText(c, ui))}</bdi>: ${escHtml(v)}</li>`).join("")}</ul>${g.valuesNote ? `<p>${escHtml(g.valuesNote)}</p>` : ""}` : ""}
 <h2>${ui.setup}</h2><ol>${g.setup.steps.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>${vis(g.setup.visual)}
 <h2>${ui.turn}</h2><ol>${g.turn.map(s => `<li>${escHtml(s.t)}${vis(s.visual)}</li>`).join("")}</ol>
-${g.combos ? `<h2>${ui.combos}</h2>${g.combos.note ? `<p>${escHtml(g.combos.note)}</p>` : ""}<ul>${g.combos.items.map(c => `<li><b>${escHtml(c.name)}</b> (${escHtml(c.points)}): <bdi dir="ltr">${escHtml(cardText(c.cards, ui))}</bdi>${c.text ? `. ${escHtml(c.text)}` : ""}</li>`).join("")}</ul>` : ""}
+${g.combos ? `<h2>${escHtml(g.combos.title || ui.combos)}</h2>${g.combos.note ? `<p>${escHtml(g.combos.note)}</p>` : ""}<ul>${g.combos.items.map(c => `<li><b>${escHtml(c.name)}</b> (${escHtml(c.points)}): <bdi dir="ltr">${escHtml(cardText(c.cards, ui))}</bdi>${c.text ? `. ${escHtml(c.text)}` : ""}</li>`).join("")}</ul>` : ""}
 <h2>${ui.scoring}</h2>${ul(g.scoring)}${vis(g.scoringVisual)}
 <h2>${ui.example}</h2>${g.example.map(s => `<p>${escHtml(s)}</p>`).join("")}
 <h2>${ui.tips}</h2>${ul(g.tips)}<h3>${ui.mistakes}</h3>${ul(g.mistakes)}
