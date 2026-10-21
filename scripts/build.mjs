@@ -37,6 +37,7 @@ function validate(g, file, tags) {
   need(/^[a-z0-9-]+$/.test(g.id || ""), `"id" must be lowercase latin letters, digits and dashes`);
   ["name", "hook", "best", "age", "deck", "goal", "video"].forEach(str);
   need(Array.isArray(g.aliases), `"aliases" must be a list`);
+  if (g.keywords !== undefined) need(Array.isArray(g.keywords), `"keywords" must be a list`);
   need(DECK_TYPES.includes(g.deckType), `"deckType" must be one of ${DECK_TYPES.join(", ")}: every game uses regular playing cards`);
   const okDecks = Number.isInteger(g.decks) ? g.decks >= 1 && g.decks <= 6
     : Array.isArray(g.decks) && g.decks.length === 2 && Number.isInteger(g.decks[0]) && g.decks[0] >= 1 && (g.decks[1] === null || (Number.isInteger(g.decks[1]) && g.decks[1] > g.decks[0]));
@@ -94,6 +95,7 @@ for (const lang of langs) {
     try { g = read(path.join(ROOT, rel)); } catch (e) { errors.push(`${rel}: not valid JSON (${e.message})`); continue; }
     errors.push(...validate(g, rel, i18n.tags));
     delete g.$schema;
+    g.keywords ||= [];
     if ((g.drinking || g.drinkingGame) && !g.tags.includes("drinking")) g.tags.push("drinking");
     games.push(g);
   }
@@ -341,14 +343,22 @@ write("sw.js", `const CACHE = "card-games-${hash}";
 const FILES = ${JSON.stringify(files)};
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())));
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())));
+const keep = (req, res) => {
+  if (res.ok && (req.url.startsWith(self.location.origin) || req.url.includes("fonts.g"))) {
+    const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy));
+  }
+  return res;
+};
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
-  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request).then(res => {
-    if (res.ok && (e.request.url.startsWith(self.location.origin) || e.request.url.includes("fonts.g"))) {
-      const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy));
-    }
-    return res;
-  }).catch(() => caches.match("/"))));
+  // Pages: the network first, so readers always get the latest text; the saved copy only offline.
+  if (e.request.mode === "navigate") {
+    e.respondWith(fetch(e.request).then(res => keep(e.request, res))
+      .catch(() => caches.match(e.request, { ignoreSearch: true }).then(hit => hit || caches.match("/"))));
+    return;
+  }
+  // Everything else (icons, fonts): the saved copy first.
+  e.respondWith(caches.match(e.request, { ignoreSearch: true }).then(hit => hit || fetch(e.request).then(res => keep(e.request, res))));
 });
 `);
 

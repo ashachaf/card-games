@@ -40,7 +40,7 @@ function norm(s) {
     .replace(/[ךםןףץ]/g, c => ({ "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" }[c]))
     .replace(/['"׳״\-–]/g, "");
 }
-const HAY = new Map(GAMES.map(g => [g.id, norm([g.name, ...g.aliases, g.hook, g.deck, ...g.tags.map(t => TAGS[t])].join(" "))]));
+const HAY = new Map(GAMES.map(g => [g.id, norm([g.name, ...g.aliases, ...(g.keywords || []), g.hook, g.deck, ...g.tags.map(t => TAGS[t])].join(" "))]));
 
 /* ---------- state ---------- */
 const state = { q: "", players: null, decks: null, time: null, diff: null, tags: new Set() };

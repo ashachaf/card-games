@@ -31,6 +31,7 @@
     "id": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "Same as the file name, and the same in every language." },
     "name": { "type": "string" },
     "aliases": { "type": "array", "items": { "type": "string" }, "description": "Other names people search for, including the English name." },
+    "keywords": { "type": "array", "items": { "type": "string" }, "description": "Extra search words that are not shown on the page, such as an older name." },
     "hook": { "type": "string", "description": "One or two sentences: what the game is and why it's fun." },
     "players": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 2, "maxItems": 2 },
     "best": { "type": "string", "description": "Best player count, e.g. \"3–5\"." },
