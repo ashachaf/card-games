@@ -137,7 +137,7 @@ function gameHTML(g) {
   const values = g.values ? `<section class="sec" id="values"><h2>${UI.values}</h2>
       <div class="values${g.values.some(([, v]) => v.length > 24) ? " long" : ""}">${g.values.map(([c, v]) => `<span class="val">${cardsHTML(c)}<span>${esc(v)}</span></span>`).join("")}</div>
       ${g.valuesNote ? `<p>${esc(g.valuesNote)}</p>` : ""}</section>` : "";
-  const toc = Object.entries(UI.toc).filter(([k]) => (k !== "drinking" || g.drinking) && (k !== "combos" || g.combos)).map(([k, l]) => `<a href="#${k}" data-to="${k}">${esc(l)}</a>`).join("");
+  const toc = Object.entries(UI.toc).filter(([k]) => (k !== "drinking" || g.drinking) && (k !== "combos" || g.combos) && (k !== "sober" || g.sober)).map(([k, l]) => `<a href="#${k}" data-to="${k}">${esc(l)}</a>`).join("");
   return `${bar()}
   <a class="back-link" href="${homeHref}">${UI.allGames}</a>
   <header class="ghead">
@@ -178,6 +178,8 @@ function gameHTML(g) {
     <p>${esc(UI.variantsNote)}</p>
     <div class="variants">${g.variants.map(([n, t]) => `<div class="variant"><b>${esc(n)}</b>${esc(t)}</div>`).join("")}</div>
   </section>
+  ${g.sober ? `<section class="sec" id="sober"><h2>${UI.sober}</h2>
+    <p>${esc(UI.soberNote)}</p>${list(g.sober.rules)}</section>` : ""}
   ${g.drinking ? `<section class="sec" id="drinking"><h2>${UI.drinking}</h2>
     <p class="drink-note">${esc(UI.drinkingNote)}</p>${list(g.drinking.rules)}</section>` : ""}
   <section class="sec" id="video"><h2>${UI.video}</h2>

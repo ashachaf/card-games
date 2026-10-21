@@ -45,7 +45,7 @@ A game can add a `drinking` section: 2–5 extra rules on top of the normal game
 
 ### Drinking games
 
-A game that is a drinking game at its core (Kings Cup, Ride the Bus) sets `"drinkingGame": true` and `"age": "18+"`. The page then opens with the adults-only note, and the build adds the `drinking` tag. Keep amounts in sips and cap any single penalty at about 5.
+A game that is a drinking game at its core (Kings Cup, Ride the Bus) sets `"drinkingGame": true` and `"age": "18+"`. The page then opens with the adults-only note, and the build adds the `drinking` tag. Keep amounts in sips and cap any single penalty at about 5. It must also have a `sober` section: 2–4 rules for playing it without drinking (points or tokens instead of sips), so anyone can play it.
 
 ### Writing style
 

@@ -61,6 +61,8 @@ function validate(g, file, tags) {
   strList(g.mistakes, "mistakes");
   if (g.drinkingGame !== undefined) need(g.drinkingGame === true, `"drinkingGame" is either true or left out`);
   if (g.drinkingGame) need(/18/.test(g.age || ""), `a drinking game needs "age": "18+"`);
+  if (g.drinkingGame) need(g.sober && Array.isArray(g.sober.rules), `a drinking game needs a "sober" section: how to play it without drinking`);
+  if (g.sober) strList(g.sober.rules, "sober.rules", 2);
   if (g.drinking !== undefined) {
     need(g.drinking && typeof g.drinking === "object", `"drinking" must be an object with "rules"`);
     if (g.drinking) strList(g.drinking.rules, "drinking.rules", 2);
@@ -290,6 +292,7 @@ ${g.combos ? `<h2>${ui.combos}</h2>${g.combos.note ? `<p>${escHtml(g.combos.note
 <h2>${ui.scoring}</h2>${ul(g.scoring)}${vis(g.scoringVisual)}
 <h2>${ui.example}</h2>${g.example.map(s => `<p>${escHtml(s)}</p>`).join("")}
 <h2>${ui.tips}</h2>${ul(g.tips)}<h3>${ui.mistakes}</h3>${ul(g.mistakes)}
+${g.sober ? `<h2>${ui.sober}</h2><p>${escHtml(ui.soberNote)}</p>${ul(g.sober.rules)}` : ""}
 ${g.drinking ? `<h2>${ui.drinking}</h2><p>${escHtml(ui.drinkingNote)}</p>${ul(g.drinking.rules)}` : ""}
 <h2>${ui.variants}</h2><ul>${g.variants.map(([n, t]) => `<li><b>${escHtml(n)}</b>: ${escHtml(t)}</li>`).join("")}</ul>
 <p><a href="./">${escHtml(ui.allGames)}</a> · <a href="../games/${g.id}/">${escHtml(ui.fullVersion)}</a></p></body></html>\n`)));
