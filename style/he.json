@@ -1,0 +1,35 @@
+{
+  "$comment": "Hebrew terminology for the game pages. scripts/test.mjs fails on any 'banned' term in games/he/*.json and i18n/he.json. Explained in .claude/skills/hebrew-style/SKILL.md.",
+  "terms": {
+    "suit": "צורה (♠ ♥ ♦ ♣). צבע הוא רק אדום או שחור.",
+    "rank": "מספר (גם J, Q, K ו-A נקראים כאן מספר)",
+    "draw pile": "קופה",
+    "discard pile": "ערימת זריקה",
+    "trick": "לקיחה",
+    "trump": "שליט",
+    "suit led": "הצורה שהפותח קבע",
+    "meld (same rank)": "סדרה",
+    "run (same suit, in order)": "רצף",
+    "wild card": "קלף פרא",
+    "face-down / face-up": "הפוך / גלוי",
+    "dealer": "המחלק",
+    "joker": "ג'וקר",
+    "turn direction": "לשמאל"
+  },
+  "banned": [
+    { "term": "שפתחו בה", "use": "שהפותח קבע" },
+    { "term": "חליפה", "use": "צורה" },
+    { "term": "טרמפ", "use": "שליט" },
+    { "term": "קלף פראי", "use": "קלף פרא" },
+    { "term": "ערימת השלכה", "use": "ערימת זריקה" },
+    { "term": "ערימת ההשלכה", "use": "ערימת הזריקה" },
+    { "term": "ג׳", "use": "ג' (גרש רגיל)" },
+    { "term": "—", "use": "פסיק או נקודתיים" },
+    { "term": "–>", "use": "מילים" }
+  ],
+  "limits": {
+    "sentenceWords": 32,
+    "turnSteps": 10,
+    "hookChars": 160
+  }
+}

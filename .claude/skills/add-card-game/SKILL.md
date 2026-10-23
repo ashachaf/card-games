@@ -1,50 +1,49 @@
 ---
 name: add-card-game
-description: Add a new game (or several) to the Card Games collection, or fix an existing one. Researches the rules, rejects games that need a special deck, writes games/<lang>/<id>.json in the fixed template in plain first-game language, and runs the check. Use when asked to "add <game>", "add games for 2 players", "fix the rules of <game>", or to translate a game.
+description: Add a new game (or several) to the Card Games collection, adapt a commercial game to regular cards, or fix an existing game's rules or text. Runs the whole process: check the game belongs, research, write games/<lang>/<id>.json using the game-page, card-visuals and hebrew-style skills, review it, run npm test, look, commit and deploy. Use for "add <game>", "add games for kids", "adapt <game> to a regular deck", "fix the rules of <game>", or translating a game.
 ---
 
-# Add a card game
+# Add or fix a game
 
-The collection is `games/<lang>/<id>.json`, one file per game per language. The template is `schema/game.schema.json`; `scripts/build.mjs` enforces it. Hebrew (`he`) is the main language.
+This skill is the process. The details live in three skills, and you must read them before writing:
+- `game-page`: which sections, in what order, how long.
+- `card-visuals`: when and how to draw.
+- `hebrew-style`: language and terminology.
+
+The general process and the definition of done are in `CLAUDE.md`.
 
 ## 1. Check the game belongs
-
-- It must be playable with **regular playing cards**: one or more 52-card decks, with or without jokers, or with some ranks removed. If it needs Uno, Taki, Tarot, an Italian or Spanish deck, a board or special pieces, stop and say so.
-- It must not already exist: look in `games/he/` by `id`, and search `name` and `aliases`.
+- **Regular cards only.** If it needs Uno, Taki, Tarot, an Italian or Spanish deck, a board or special pieces, stop and say so. A commercial game can be adapted when its cards map onto a regular deck: write down the mapping (which cards stand for what, and how many of each) and check the counts add up.
+- **Not already in the collection:** search `games/he/` by `id`, `name`, `aliases` and `keywords`.
 
 ## 2. Get the rules right
-
-- Check the rules in at least two independent sources (pagat.com is the most reliable for traditional games). Note where sources disagree.
-- **Never copy or translate a source's wording.** Read, close the source, and write the explanation fresh.
-- Choose the most common version as the base. Everything else goes into `variants`.
+- **Check at least two independent sources.** pagat.com is the most reliable for traditional games. For a commercial game, use its rules sheet or the publisher's page.
+- **Never copy or translate a source's wording.** Read, close the source, and write fresh text.
+- **Choose the most common version as the base.** Everything else goes into `variants`.
+- **Write down every gap you filled yourself**, wherever the source is silent, and report it to the owner at the end.
+- **A rule the owner has stated** (how they play at home) beats the sources. Write it as the base.
 
 ## 3. Write the file
+- **Copy a similar game**, at the same difficulty and of the same kind, to `games/he/<id>.json`, and fill every field according to `game-page`.
+- **Edit the JSON directly**, with no generator scripts.
+- **Drawings** follow `card-visuals`, and **all text** follows `hebrew-style`.
+- **Tags** come only from `i18n/he.json`. Never add `drinking`.
+- **Remove the game from `coming`** in `i18n/he.json` if it's listed there.
 
-Start from an existing file such as `games/he/yaniv.json`, and fill every field:
+## 4. Review before testing
+Run the `review-card-game` checks on the new game:
+- Deal and play two turns using only the page.
+- Every card and number in the drawings and in `example` adds up.
+- No term is used before it's explained.
 
-- `id`: the English name, lowercase with dashes. `aliases`: the English name first, then other names people search for.
-- `hook`: one or two sentences. `goal`: what wins or loses, in one or two sentences.
-- `deck` in words, `deckType` (`standard`, `jokers`, `stripped`) describing each deck, and `decks`: how many decks the game needs, as a number (`1`) or a range (`[1, 2]`, or `[1, null]` for any number of decks).
-- `values`: card ranks or points, as `[cards, meaning]` pairs, with `valuesNote` for trump or special cards.
-- `setup.steps` plus one `setup.visual` showing the deal. `turn`: one action per step, with a `visual` wherever cards make the rule clearer (allowed or not allowed, a combination, what beats what).
-- `scoring`: how a round ends and how the game ends.
-- `example`: 3–5 short paragraphs of one real round with named players and real cards, including one moment where a rule matters.
-- `tips` (2–4) and `mistakes` (2–3): what a first-time player needs, and what they really get wrong.
-- `variants`: `[name, text]` pairs for common house rules.
-- `inShort` (required for difficulty 3, recommended when the turn has more than 6 steps), `glossary` for terms of art, and `combos` for scoring combinations. Never pack a list of combinations into one turn step.
-- `drinking` (optional): `{ "rules": [...] }`, 2–5 extra rules layered on the normal game, moderate (sips; at most the overall loser finishes a drink). Never add the `drinking` tag by hand; the build adds it.
-- `drinkingGame: true` (with `age: "18+"`) for a game whose core is drinking, such as Kings Cup. Sips only, any single penalty capped at about 5. It also needs `sober: { "rules": [...] }`: how to play it without drinking (points or tokens instead of sips). The check fails without it.
-- `video`: a YouTube search phrase (Hebrew if videos exist in Hebrew, otherwise English).
-- `tags`: 2–6 tags from `i18n/he.json` only.
+Fix what you find.
 
-Card codes: rank + `S`/`H`/`D`/`C` (`AS`, `10H`, `KD`), `X` face down, `JK` joker, `|` gap, trailing `*` highlight. Give each visual a `caption` or `note` that says what it shows, because the text version reads it instead of the drawing.
+## 5. Test, look, publish
+- **`npm test`:** must pass. Read the warnings.
+- **`npm run serve`:** open `/games/<id>/` and check the drawings and the order of sections.
+- **Commit** `feat(games): <name>` (or `fix(<id>): …`), stage the file by name, push, and check the deploy and that `https://card-games.win/games/<id>/` answers.
 
-**Hebrew style:** short sentences, everyday words, address the reader in the plural ("מניחים", "לוקחים"). Explain a term the first time it appears (שליט, לקיחה). Use digits for numbers and card codes inside sentences like `7♥`.
-
-## 4. Verify
-
-Run `npm run check`. Then `npm run build` and open `dist/index.html#<id>` (or `npm run serve`) to see the page. Read the page once as someone who has never played: could they start a game from it alone?
-
-When you add the game, remove it from `coming` in `i18n/he.json` if it's listed there.
-
-After writing, run the `review-card-game` skill on the new game and fix what it finds.
+## 6. Report to the owner
+- a link to the page;
+- in one or two sentences, what's on it;
+- the gaps or decisions you filled in yourself, so the owner can correct them.

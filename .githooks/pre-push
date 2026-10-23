@@ -1,0 +1,4 @@
+#!/bin/sh
+# Runs the full sanity test before every push. Set up once with: npm run setup
+echo "pre-push: npm test"
+npm test --silent || { echo "pre-push: the sanity test failed, nothing was pushed. Fix it and push again."; exit 1; }

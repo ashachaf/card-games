@@ -8,9 +8,11 @@ import { execFileSync } from "node:child_process";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const DIST = path.join(ROOT, "dist");
-const REPO = "https://github.com/ashachaf/card-games";
-const SITE = "https://card-games.win"; // the live address: canonical links, sitemap, previews
-const DEFAULT_LANG = "he";
+// The live address, the repo and the main language live in site.config.json, shared with the tests.
+const CONFIG = JSON.parse(fs.readFileSync(path.join(ROOT, "site.config.json"), "utf8"));
+const REPO = CONFIG.repo;
+const SITE = CONFIG.site;
+const DEFAULT_LANG = CONFIG.defaultLang;
 const CHECK_ONLY = process.argv.includes("--check");
 
 const DECK_TYPES = ["standard", "jokers", "stripped"];
@@ -248,7 +250,7 @@ for (const [lang, b] of Object.entries(bundles)) {
       "@graph": [website, { "@type": "ItemList", name: ui.title, itemListElement: b.games.map((g, i) => ({ "@type": "ListItem", position: i + 1, url: urlOf(lang, `games/${g.id}/`), name: g.name })) }]
     } }),
     data: b,
-    prerendered: views({ ...b, base: lang === DEFAULT_LANG ? "" : "../" }).isolateCards(views({ ...b, base: lang === DEFAULT_LANG ? "" : "../" }).listHTML())
+    prerendered: views({ ...b, repo: REPO, base: lang === DEFAULT_LANG ? "" : "../" }).isolateCards(views({ ...b, repo: REPO, base: lang === DEFAULT_LANG ? "" : "../" }).listHTML())
   })));
   sitemap.push({ loc: homeUrl, lastmod: b.games.map(g => lastmod(`games/${lang}/${g.id}.json`)).sort().pop(), langs: Object.keys(bundles), rel: "" });
   llms.push(`# ${ui.siteName}`, "", `> ${ui.title}. ${ui.intro}`, "");
@@ -259,7 +261,7 @@ for (const [lang, b] of Object.entries(bundles)) {
     const url = urlOf(lang, rel);
     const base = lang === DEFAULT_LANG ? "../../" : "../../../";
     const data = { ui, tags: b.tags, coming: [], games: [g], page: g.id };
-    const v = views({ ...data, base });
+    const v = views({ ...data, repo: REPO, base });
     const title = fill(ui.gameTitle, { name: g.name });
     const description = clip(`${g.hook} ${ui.players}: ${g.players[0]}–${g.players[1]}. ${g.goal}`);
     const steps = [...g.setup.steps, ...g.turn.map(s => s.t)];
@@ -327,7 +329,7 @@ ${g.drinking ? `<h2>${ui.drinking}</h2><p>${escHtml(ui.drinkingNote)}</p>${ul(g.
 // One file for previews (e.g. a claude.ai artifact): one page, games open by #id, offline off.
 {
   const b = bundles[DEFAULT_LANG];
-  const v = views({ ...b, hashRoutes: true });
+  const v = views({ ...b, repo: REPO, hashRoutes: true });
   const head = template.replace("__TITLE__", escHtml(b.ui.siteName)).replace("__DESCRIPTION__", escHtml(b.ui.intro)).replaceAll("__BASE__", "").replace("__SEO__", "").replace(/<link rel="(manifest|icon|apple-touch-icon)"[^>]*>\n?/g, "");
   write("preview.html", `${head}
 <div class="app" id="app" dir="${b.ui.dir}" lang="${DEFAULT_LANG}">${v.isolateCards(v.listHTML())}</div>

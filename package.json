@@ -4,11 +4,15 @@
   "private": true,
   "description": "Card games for regular playing cards, explained for your first game.",
   "type": "module",
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "check": "node scripts/build.mjs --check",
     "build": "node scripts/build.mjs",
-    "serve": "node scripts/build.mjs && python3 -m http.server 8765 --directory dist"
+    "test": "node scripts/build.mjs && node scripts/test.mjs",
+    "serve": "node scripts/build.mjs && python3 -m http.server 8765 --directory dist",
+    "setup": "git config core.hooksPath .githooks"
   },
   "license": "MIT"
 }

@@ -46,14 +46,18 @@ All of it is generated from `games/`, so a new game gets its page, its sitemap e
 Other languages build to `dist/<lang>/`. There are no dependencies. You need only Node 18+.
 
 ```
+npm test        # build + sanity test (run after every change)
 npm run check   # validate games only
 npm run build   # validate and build
 npm run serve   # build, then serve dist/ on http://localhost:8765
+npm run setup   # once per clone: run the sanity test before every push
 ```
 
 Every game has its own address (`/games/yaniv/`), so each game can get its own QR code. Old `/#yaniv` links redirect there.
 
 ## Contributing
+
+The process and the codebase rules are in [CLAUDE.md](CLAUDE.md); the writing, page and drawing rules are in `.claude/skills/` (`game-page`, `card-visuals`, `hebrew-style`).
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). In short: copy an existing game file, write it in your own words, and run `npm run check`.
 

@@ -1,5 +1,7 @@
 # Contributing
 
+The full process and the codebase rules are in [CLAUDE.md](CLAUDE.md). The page structure, card drawings and Hebrew style are defined in `.claude/skills/game-page`, `card-visuals` and `hebrew-style`; please follow them.
+
 Thanks for helping. Most contributions are a new game, a fix to a rule, or a translation, and each one is a single JSON file.
 
 ## The rules of the collection
@@ -14,7 +16,7 @@ Thanks for helping. Most contributions are a new game, a fix to a rule, or a tra
 1. Copy a file from `games/he/`, for example `yaniv.json`, to `games/he/<id>.json`. The `id` is the English name in lowercase with dashes (`go-fish`).
 2. Fill in every field. The template, with a description of each field, is in [`schema/game.schema.json`](schema/game.schema.json). If your editor supports JSON Schema, keep the `$schema` line for autocomplete.
 3. Use only tags that exist in `i18n/he.json`. If you need a new tag, add it there in the same pull request.
-4. Run `npm run check`, then `npm run serve` and look at your game in the browser.
+4. Run `npm test` (it builds the site and runs the sanity test), then `npm run serve` and look at your game in the browser.
 5. Open a pull request.
 
 ### Card drawings
