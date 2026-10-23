@@ -69,6 +69,12 @@ for (const lang of langs) {
   const home = read(path.join(DIST, prefix, "index.html"));
   const cards = (prerendered(home).match(/class="gcard"/g) || []).length;
   if (cards !== list.length) fail(`${prefix}index.html lists ${cards} games, expected ${list.length}`);
+  // The list runs from the youngest age up (then difficulty), so families find kids' games first.
+  const order = dataOf(home).games.map(g => [parseInt(g.age, 10) || 0, g.difficulty]);
+  for (let i = 1; i < order.length; i++) {
+    const [a1, d1] = order[i - 1], [a2, d2] = order[i];
+    if (a2 < a1 || (a2 === a1 && d2 < d1)) { fail(`${prefix}index.html: games are not sorted by age, then difficulty (position ${i + 1})`); break; }
+  }
 
   for (const { g } of list) {
     const rel = `${prefix}games/${g.id}/index.html`;

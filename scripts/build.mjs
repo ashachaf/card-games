@@ -101,7 +101,9 @@ for (const lang of langs) {
     if ((g.drinking || g.drinkingGame) && !g.tags.includes("drinking")) g.tags.push("drinking");
     games.push(g);
   }
-  games.sort((a, b) => a.difficulty - b.difficulty || a.name.localeCompare(b.name, lang)); // easy first, then by name
+  // Home-page order: youngest age first (drinking games, 18+, last), then easier, then by name.
+  const minAge = g => parseInt(g.age, 10) || 0;
+  games.sort((a, b) => minAge(a) - minAge(b) || a.difficulty - b.difficulty || a.name.localeCompare(b.name, lang));
   bundles[lang] = { ...i18n, games };
 }
 if (errors.length) {
