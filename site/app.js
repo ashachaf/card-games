@@ -43,13 +43,15 @@ function norm(s) {
 const HAY = new Map(GAMES.map(g => [g.id, norm([g.name, ...g.aliases, ...(g.keywords || []), g.hook, g.deck, ...g.tags.map(t => TAGS[t])].join(" "))]));
 
 /* ---------- state ---------- */
-const state = { q: "", players: null, decks: null, time: null, diff: null, tags: new Set() };
+const state = { q: "", players: null, decks: null, age: null, time: null, diff: null, tags: new Set() };
 let textMode = false;
 try { textMode = localStorage.getItem("textMode") === "1"; } catch (e) {}
 
 const TIMES = { s: g => g.minutes[0] <= 15, m: g => g.minutes[0] <= 30 && g.minutes[1] >= 15, l: g => g.minutes[1] > 30 };
 const PLAYER_OPTS = [2, 3, 4, 5, 6];
-const anyFilter = () => Boolean(state.q || state.players || state.decks || state.time || state.diff || state.tags.size);
+const anyFilter = () => Boolean(state.q || state.players || state.decks || state.age || state.time || state.diff || state.tags.size);
+const AGE_OPTS = [4, 6, 8, 10, 12, 18];
+const minAge = g => parseInt(g.age, 10) || 0; // "8+" -> 8
 // decks is a number (1) or a range [min, max]; max null means "or more".
 const deckRange = g => Array.isArray(g.decks) ? g.decks : [g.decks, g.decks];
 const deckShort = g => { const [a, b] = deckRange(g); return b === null ? `${a}+` : a === b ? `${a}` : `${a}–${b}`; };
@@ -70,6 +72,7 @@ function matches(g) {
     const [a, b] = deckRange(g), k = state.decks;
     if (k === 3 ? !(b === null || b >= 3) : !(a <= k && (b === null || b >= k))) return false;
   }
+  if (state.age && minAge(g) > state.age) return false; // suitable from this age: the game's minimum age is at or below it
   if (state.time && !TIMES[state.time](g)) return false;
   if (state.diff && g.difficulty !== state.diff) return false;
   for (const t of state.tags) if (!g.tags.includes(t)) return false;
@@ -102,7 +105,7 @@ function gameCard(g) {
   return `<a class="gcard" href="${gameHref(g.id)}">
     <div class="gtop"><div><h2 class="gname">${esc(g.name)}</h2><div class="galias">${esc(g.aliases[0] || "")}</div></div></div>
     <p class="ghook">${esc(g.hook)}</p>
-    <div class="meta"><span>${UI.players} <b>${players(g)}</b></span><span>${UI.decks} <b>${deckShort(g)}</b></span><span>${UI.time} <b>${minutes(g)}</b></span><span>${UI.level} <b>${UI.difficulty[g.difficulty]}</b></span></div>
+    <div class="meta"><span>${UI.players} <b>${players(g)}</b></span><span>${UI.decks} <b>${deckShort(g)}</b></span><span>${UI.time} <b>${minutes(g)}</b></span><span>${UI.level} <b>${UI.difficulty[g.difficulty]}</b></span><span>${UI.age} <b>${esc(g.age)}</b></span></div>
     ${tagsHTML(g)}
   </a>`;
 }
@@ -122,6 +125,7 @@ function listHTML() {
   <div class="filters">
     <div class="frow"><span class="flabel">${UI.players}</span>${PLAYER_OPTS.map(n => chip("players", n, n === 6 ? "6+" : n, state.players === n)).join("")}</div>
     <div class="frow"><span class="flabel">${UI.decks}</span>${Object.entries(UI.deckOpts).map(([k, l]) => chip("decks", k, l, state.decks === Number(k))).join("")}</div>
+    <div class="frow"><span class="flabel">${UI.age}</span>${AGE_OPTS.map(a => chip("age", a, `${a}+`, state.age === a)).join("")}</div>
     <div class="frow"><span class="flabel">${UI.time}</span>${Object.keys(TIMES).map(k => chip("time", k, UI.times[k], state.time === k)).join("")}</div>
     <div class="frow"><span class="flabel">${UI.level}</span>${[1, 2, 3].map(d => chip("diff", d, UI.difficulty[d], state.diff === d)).join("")}</div>
     <div class="frow"><span class="flabel">${UI.type}</span>${usedTags.map(t => chip("tags", t, TAGS[t], state.tags.has(t))).join("")}</div>
@@ -221,7 +225,7 @@ if (typeof document !== "undefined") {
     const el = document.getElementById("results");
     el.innerHTML = isolateCards(resultsHTML());
     const c = document.getElementById("clear");
-    if (c) c.addEventListener("click", () => { state.q = ""; state.players = state.decks = state.time = state.diff = null; state.tags.clear(); renderList(); });
+    if (c) c.addEventListener("click", () => { state.q = ""; state.players = state.decks = state.age = state.time = state.diff = null; state.tags.clear(); renderList(); });
   };
 
   const renderList = () => {
@@ -230,7 +234,7 @@ if (typeof document !== "undefined") {
     q.addEventListener("input", () => { state.q = q.value; renderResults(); });
     app.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
       const g = b.dataset.g, raw = b.dataset.v;
-      const v = g === "players" || g === "diff" || g === "decks" ? Number(raw) : raw;
+      const v = g === "players" || g === "diff" || g === "decks" || g === "age" ? Number(raw) : raw;
       if (g === "tags") { state.tags.has(v) ? state.tags.delete(v) : state.tags.add(v); b.setAttribute("aria-pressed", state.tags.has(v)); }
       else {
         state[g] = state[g] === v ? null : v;
