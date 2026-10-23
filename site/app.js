@@ -188,6 +188,9 @@ function gameHTML(g) {
     </a>
   </section>
   ${tagsHTML(g)}
+  ${g.related && g.related.length ? `<nav class="sec related" id="related" aria-label="${esc(UI.related)}"><h2>${UI.related}</h2>
+    <div class="rel-grid">${g.related.map(r => `<a class="rel" href="${gameHref(r.id)}"><b>${esc(r.name)}</b><span>${UI.players} ${players(r)} · ${UI.difficulty[r.difficulty]}</span></a>`).join("")}</div>
+  </nav>` : ""}
   <p class="foot"><a href="${BASE}text/${g.id}.html">${esc(UI.textVersion)}</a> · <a href="${DATA.repo}/issues/new?template=unclear.yml&title=${encodeURIComponent(g.name + " (" + g.id + "): ")}" target="_blank" rel="noopener">${esc(UI.unclear)}</a></p>
   <a class="back-link" href="${homeHref}">${UI.allGames}</a>`;
 }

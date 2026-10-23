@@ -106,6 +106,28 @@ if (errors.length) {
   console.error(`✗ ${errors.length} problem(s):\n  ` + errors.join("\n  "));
   process.exit(1);
 }
+// Similar games for the bottom of each page: shared type tags count most, then a close
+// difficulty and an overlapping player count. Only a drinking game (Kings Cup) suggests
+// drinking games; a family game with an optional drinking version (War) never does.
+const BROAD_TAGS = new Set(["group", "family", "drinking"]);
+for (const b of Object.values(bundles)) {
+  for (const g of b.games) {
+    g.related = b.games
+      .filter(o => o.id !== g.id && (g.drinkingGame || !o.drinkingGame))
+      .map(o => {
+        const shared = o.tags.filter(t => g.tags.includes(t));
+        const score = shared.reduce((s, t) => s + (BROAD_TAGS.has(t) ? 1 : 3), 0)
+          + (o.difficulty === g.difficulty ? 2 : Math.abs(o.difficulty - g.difficulty) === 1 ? 1 : 0)
+          + (o.players[0] <= g.players[1] && g.players[0] <= o.players[1] ? 1 : 0)
+          + (g.drinkingGame && o.drinkingGame ? 3 : 0);
+        return { o, score };
+      })
+      .sort((a, b) => b.score - a.score || a.o.name.localeCompare(b.o.name))
+      .slice(0, 4)
+      .map(({ o }) => ({ id: o.id, name: o.name, players: o.players, difficulty: o.difficulty, minutes: o.minutes }));
+  }
+}
+
 const total = Object.values(bundles).reduce((n, b) => n + b.games.length, 0);
 console.log(`✓ ${total} game(s) valid in ${langs.join(", ")}`);
 if (CHECK_ONLY) process.exit(0);
@@ -297,6 +319,7 @@ ${g.combos ? `<h2>${escHtml(g.combos.title || ui.combos)}</h2>${g.combos.note ? 
 ${g.sober ? `<h2>${ui.sober}</h2><p>${escHtml(ui.soberNote)}</p>${ul(g.sober.rules)}` : ""}
 ${g.drinking ? `<h2>${ui.drinking}</h2><p>${escHtml(ui.drinkingNote)}</p>${ul(g.drinking.rules)}` : ""}
 <h2>${ui.variants}</h2><ul>${g.variants.map(([n, t]) => `<li><b>${escHtml(n)}</b>: ${escHtml(t)}</li>`).join("")}</ul>
+<h2>${ui.related}</h2><ul>${g.related.map(r => `<li><a href="${r.id}.html">${escHtml(r.name)}</a></li>`).join("")}</ul>
 <p><a href="./">${escHtml(ui.allGames)}</a> · <a href="../games/${g.id}/">${escHtml(ui.fullVersion)}</a></p></body></html>\n`)));
   }
 }

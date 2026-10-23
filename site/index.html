@@ -201,6 +201,13 @@ p { margin: 0; }
 .text-mode .gloss div { display: block; }
 .text-mode .gloss dt::after { content: ": "; }
 .text-mode .gloss dt, .text-mode .gloss dd { display: inline; }
+.rel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .6rem; }
+.rel { display: flex; flex-direction: column; gap: .15rem; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: .65rem .8rem; text-decoration: none; color: var(--ink); min-width: 0; }
+.rel:hover { border-color: var(--accent); }
+.rel b { font-family: var(--font-display); font-weight: 400; font-size: 1.1rem; }
+.rel span { font-size: .82rem; color: var(--muted); }
+.text-mode .rel-grid { display: block; }
+.text-mode .rel { display: block; background: none; border: 0; padding: 0 0 .4rem; }
 .variants { display: flex; flex-direction: column; gap: .6rem; }
 .variant b { display: block; }
 .video {
