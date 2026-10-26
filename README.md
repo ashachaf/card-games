@@ -6,7 +6,7 @@
 
 **לאתר: [card-games.win](https://card-games.win/)** · [גרסת טקסט קלה](https://card-games.win/text/)
 
-<p align="center"><a href="https://card-games.win/"><img src="qr/site.png" alt="קוד QR לאתר משחקי קלפים" width="200"></a><br>סרקו כדי לפתוח את האתר</p>
+<p align="center"><a href="https://card-games.win/"><img src="qr/card.png" alt="משחקי קלפים: חוקים והסבר צעד אחר צעד למשחקים עם חפיסת קלפים רגילה. סרקו את הקוד כדי לפתוח את card-games.win" width="300"></a></p>
 
 - כל משחק כאן משוחק עם קלפי משחק רגילים: חפיסה אחת או כמה חפיסות, לפעמים עם ג'וקרים או בלי חלק מהקלפים.
 - חיפוש וסינון לפי מספר שחקנים, מספר חפיסות, זמן, רמה וסוג.
@@ -20,7 +20,7 @@
 
 Card games you can play with regular playing cards (one deck or several), explained so you can play on your first try. Hebrew first; more languages welcome.
 
-**Site: [card-games.win](https://card-games.win/)** · [Light text version](https://card-games.win/text/) · QR code: [PNG](qr/site.png), [SVG for print](qr/site.svg)
+**Site: [card-games.win](https://card-games.win/)** · [Light text version](https://card-games.win/text/) · QR code: [card with explanation](qr/card.png), [plain PNG](qr/site.png), [SVG for print](qr/site.svg)
 
 ## How it works
 
@@ -41,7 +41,7 @@ scripts/build.mjs        checks every game, then builds dist/
 - `games/<id>/`: a pre-rendered page per game with its own title, description, canonical link, Open Graph preview and schema.org data (`Game`, `HowTo`, `BreadcrumbList`).
 - `sitemap.xml` (dated from each game's last commit), `robots.txt`, `llms.txt`, `404.html`, the share image `og.png` and the app icon.
 
-All of it is generated from `games/`, so a new game gets its page, its sitemap entry and a place in other games' "similar games" links on the next push. To redraw the share image and the ace-of-spades icons (`site/og.png`, `icon.png`, `apple-touch-icon.png`, `favicon-32.png`), run `python3 scripts/make-images.py`. The browser-tab icon is `site/favicon.svg`.
+All of it is generated from `games/`, so a new game gets its page, its sitemap entry and a place in other games' "similar games" links on the next push. To redraw the share image and the ace-of-spades icons (`site/og.png`, `icon.png`, `apple-touch-icon.png`, `favicon-32.png`), run `python3 scripts/make-images.py`. The browser-tab icon is `site/favicon.svg`. To redraw the QR codes (`qr/card.png`, `qr/site.png`, `qr/site.svg`), run `python3 scripts/make-qr.py`.
 
 Other languages build to `dist/<lang>/`. There are no dependencies. You need only Node 18+.
 
